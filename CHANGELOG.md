@@ -4,17 +4,23 @@ All notable changes to postalkit. The format follows [Keep a Changelog](https://
 
 ## [0.2.0] - Unreleased
 
+### Changed
+
+- **An empty field is valid where addresses don't require a postal code** (108 countries, such as Argentina and Bulgaria), as it already was for the 70 countries without postal codes. `parse(c, "")` returns `empty` only where `getCountryInfo(c).required` is true.
+
 ### Added
 
-- `postalkit/partial`: `checkPartial(country, input)` tells whether input is `"complete"`, `"partial"` (could still become valid) or `"invalid"` while the user types. Adds 2.5 kB gzip, only when imported.
-- `postalkit/messages`: `getErrorMessage(result)` gives English error messages using the country's own word for the code ("This ZIP code is too short (e.g. 95014)."), with `MESSAGES` that can be reworded or translated. Adds 0.3 kB gzip.
+- `postalkit/partial`: `checkPartial(country, input)` tells whether input is `"complete"`, `"partial"` (could still become valid) or `"invalid"` while the user types. Adds 2.6 kB gzip, only when imported.
+- `parseTyped` in `postalkit/partial`: `parse` with `"too-short"` only when more characters can help. `"QQ1"` in the UK is `"invalid-format"`, since no postcode starts with QQ.
+- Digits in any script are understood: Arabic-Indic, Persian, Devanagari, Bengali, Thai and others become 0-9 (`"۱۱۹۳۶۱۲۳۴۵"` is `11936-12345` in Iran).
+- `postalkit/messages`: `getErrorMessage(result)` gives English error messages using the country's own word for the code ("This ZIP code is too short (e.g. 95014)."), with `MESSAGES` that can be reworded or translated, and labels that can be replaced too. Where codes are digits only, invalid characters get "This ZIP code can only contain digits". Adds 0.3 kB gzip.
 - `CountryInfo.inputMaxLength`: a `maxlength` for the input with room for a typed country prefix (`"SE - 114 55"`). `maxLength` stays the canonical length.
 - Documentation comments on every exported type, and generated API reference (`npm run docs`).
 - `typesVersions`, so `postalkit/regions` and the new entry points resolve in TypeScript projects using `moduleResolution: "node"`.
 
 ### Data
 
-- **Argentina** accepts the 4-digit postal code (`1425`) as well as the 8-character CPA (`C1425CJD`). Google's pattern only allows the CPA, but the 4-digit form is what addresses use. Found by the new real-world test corpus.
+- **Argentina** accepts the 4-digit postal code (`1425`), now also its example, as well as the 8-character CPA (`C1425CJD`). Google's pattern only allows the CPA, but the 4-digit form is what addresses use. Found by the new real-world test corpus.
 - `guessCountry` ranks Guadeloupe and Saint-Martin before Saint-Barthélemy, which shares their pattern. Before, the order was alphabetical.
 
 ### Quality

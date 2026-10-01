@@ -22,6 +22,9 @@ assert.strictEqual(regions.isInRegion("US", "10001", "US-NY"), true);
 
 assert.strictEqual(partial.checkPartial("GB", "SW1"), "partial");
 assert.strictEqual(partial.checkPartial("DE", "1O1"), "invalid");
+assert.strictEqual(partial.parseTyped("GB", "QQ1").error, "invalid-format");
+assert.strictEqual(core.format("IR", "۱۱۹۳۶۱۲۳۴۵"), "11936-12345");
+assert.strictEqual(core.isValid("AR", ""), true);
 assert.strictEqual(messages.getErrorMessage(core.parse("US", "9021")), "This ZIP code is too short (e.g. 95014).");
 assert.strictEqual(core.getCountryInfo("SE").inputMaxLength, 11);
 

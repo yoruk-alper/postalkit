@@ -162,7 +162,9 @@ for (const [cc, c] of Object.entries(upstream.countries)) {
   });
   if (!examples.length) throw new Error(`${cc}: no examples`);
   const example = ov?.example ?? examples[0];
-  if (!examples.includes(example)) throw new Error(`${cc}: override example ${example} is not an upstream example`);
+  // An override's example must be an upstream one, unless the override widens the format and its own pattern accepts it as canonical.
+  if (!examples.includes(example) && !(ov?.widens && canon(example) === example))
+    throw new Error(`${cc}: override example ${example} is not an upstream example`);
 
   const lens = asts.map(lengths);
   const min = Math.min(...lens.map((l) => l[0]));

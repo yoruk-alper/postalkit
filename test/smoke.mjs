@@ -2,7 +2,7 @@
 import assert from "assert";
 import { format, getCountries, getCountryInfo, guessCountry, isValid, parse } from "postalkit";
 import { findRegions, isInRegion } from "postalkit/regions";
-import { checkPartial } from "postalkit/partial";
+import { checkPartial, parseTyped } from "postalkit/partial";
 import { getErrorMessage } from "postalkit/messages";
 
 assert.strictEqual(format("ca", "k1a0t6"), "K1A 0T6");
@@ -18,6 +18,9 @@ assert.strictEqual(isInRegion("US", "10001", "US-NY"), true);
 
 assert.strictEqual(checkPartial("GB", "SW1"), "partial");
 assert.strictEqual(checkPartial("DE", "1O1"), "invalid");
+assert.strictEqual(parseTyped("GB", "QQ1").error, "invalid-format");
+assert.strictEqual(format("IR", "۱۱۹۳۶۱۲۳۴۵"), "11936-12345");
+assert.strictEqual(isValid("AR", ""), true);
 assert.strictEqual(getErrorMessage(parse("US", "9021")), "This ZIP code is too short (e.g. 95014).");
 assert.strictEqual(getCountryInfo("SE").inputMaxLength, 11);
 

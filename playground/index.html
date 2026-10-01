@@ -99,13 +99,13 @@
 <script type="module">
   import { getCountries, getCountryInfo, getCountryName, guessCountry, parse } from "../dist/index.js";
   import { findRegions, hasRegionData } from "../dist/regions.js";
-  import { checkPartial } from "../dist/partial.js";
+  import { checkPartial, parseTyped } from "../dist/partial.js";
   import { getErrorMessage } from "../dist/messages.js";
 
   const $ = (id) => document.getElementById(id);
   const country = $("country");
   const code = $("code");
-  const EXAMPLES = [["GB", "sw1a1aa"], ["US", "902101234"], ["JP", "１００－０００１"], ["SE", "SE-114 55"], ["CA", "k1a-0t6"], ["LV", "1050"], ["DE", "1O115"], ["AE", ""]];
+  const EXAMPLES = [["GB", "sw1a1aa"], ["US", "902101234"], ["JP", "１００－０００１"], ["IR", "۱۱۹۳۶۱۲۳۴۵"], ["SE", "SE-114 55"], ["CA", "k1a-0t6"], ["LV", "1050"], ["US", "9021O"], ["GB", "QQ1"], ["AR", ""], ["AE", ""]];
 
   const names = getCountries()
     .map((c) => [c, getCountryName(c)])
@@ -149,9 +149,6 @@
     update();
   }
 
-  // checkPartial said "invalid", so more characters can't help: "too short" would mislead ("QQ1" in the UK).
-  const explain = (r) => getErrorMessage(!r.valid && r.error === "too-short" ? { ...r, error: "invalid-format" } : r);
-
   function update() {
     const c = country.value;
     const v = code.value;
@@ -159,10 +156,11 @@
     const el = $("status");
     el.className = "status " + (v ? status : "idle");
     const text =
-      !v ? (getCountryInfo(c).hasPostalCode ? "Start typing." : "Nothing to enter: this country has no postal codes.")
+      !v ? (!getCountryInfo(c).hasPostalCode ? "Nothing to enter: this country has no postal codes."
+        : getCountryInfo(c).required ? "Start typing." : "Optional here: an empty field is valid.")
       : status === "complete" ? `Valid. Stored as ${parse(c, v).value}.`
       : status === "partial" ? "Keep typing…"
-      : explain(parse(c, v));
+      : getErrorMessage(parseTyped(c, v));
     el.innerHTML = "";
     const b = document.createElement("b");
     b.textContent = v ? status : "";

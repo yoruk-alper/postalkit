@@ -13,6 +13,9 @@ export function run({ core, regions, partial, messages }) {
   eq("full-width input", core.format("JP", "１００－０００１"), "100-0001");
   eq("non-breaking space", core.format("CA", "K1A 0T6"), "K1A 0T6");
   eq("en dash", core.format("US", "90210–1234"), "90210-1234");
+  eq("native digits", ["۱۱۹۳۶۱۲۳۴۵", "١٢٣٤٥", "११००३४", "๑๐๑๐๐"].map((x, i) => core.format(["IR", "SA", "IN", "TH"][i], x)), ["11936-12345", "12345", "110034", "10100"]);
+  eq("optional empty", core.isValid("AR", ""), true);
+  eq("parseTyped", partial.parseTyped("GB", "QQ1").error, "invalid-format");
   eq("country prefix", core.format("SE", "SE - 114 55"), "114 55");
   eq("fixed prefix restored", core.format("LV", "1050"), "LV-1050");
   eq("no postal codes", core.isValid("AE", ""), true);
@@ -24,6 +27,7 @@ export function run({ core, regions, partial, messages }) {
   eq("findRegions", regions.findRegions("US", "90210"), [{ code: "CA", name: "California" }]);
   eq("checkPartial", ["SW1", "SW1A 1AA", "QQ1"].map((x) => partial.checkPartial("GB", x)), ["partial", "complete", "invalid"]);
   eq("getErrorMessage", messages.getErrorMessage(core.parse("US", "9021")), "This ZIP code is too short (e.g. 95014).");
+  eq("digits-only message", messages.getErrorMessage(core.parse("US", "9021O")), "This ZIP code can only contain digits (e.g. 95014).");
   let threw = false;
   try {
     for (const x of [null, undefined, {}, [], 1.5, Symbol("x"), "__proto__"]) {
@@ -50,9 +54,10 @@ export function fingerprint({ core, regions, partial }) {
   for (const c of core.getCountries()) {
     const info = core.getCountryInfo(c);
     const ex = info.example;
-    const inputs = ["", ex, ex.toLowerCase(), ex.replace(/[ -]/g, ""), `${c}-${ex}`, fullWidth(ex), ex.slice(0, 2), ex + "9", ex.replace(/\d/, "O")];
+    const persian = (s) => s.replace(/\d/g, (d) => String.fromCharCode(0x6f0 + +d));
+    const inputs = ["", ex, ex.toLowerCase(), ex.replace(/[ -]/g, ""), `${c}-${ex}`, fullWidth(ex), persian(ex), ex.slice(0, 2), ex + "9", ex.replace(/\d/, "O")];
     out.push(JSON.stringify(info), JSON.stringify(core.guessCountry(ex)));
-    for (const x of inputs) out.push(JSON.stringify([core.parse(c, x), partial.checkPartial(c, x), regions.findRegions(c, x)]));
+    for (const x of inputs) out.push(JSON.stringify([core.parse(c, x), partial.parseTyped(c, x), partial.checkPartial(c, x), regions.findRegions(c, x)]));
   }
   // FNV-1a, 32-bit
   let h = 0x811c9dc5;

@@ -57,6 +57,14 @@ test("forgives how people and keyboards actually type", () => {
     ["AI", "2640", "AI-2640"],
     ["AD", "100", "AD100"],
     ["BB", "11000", "BB11000"],
+    ["IR", "۱۱۹۳۶۱۲۳۴۵", "11936-12345"], // Persian digits
+    ["SA", "١٢٣٤٥", "12345"], // Arabic-Indic digits
+    ["EG", "١٢٣٤٥", "12345"],
+    ["IN", "११००३४", "110034"], // Devanagari
+    ["BD", "১২০৩", "1203"], // Bengali
+    ["TH", "๑๐๑๐๐", "10100"], // Thai
+    ["SA", "٩0٢1٠", "90210"], // mixed scripts
+    ["US", "𝟗𝟎𝟐𝟏𝟎", "90210"], // mathematical bold, folded by NFKC
   ];
   for (const [c, input, out] of cases) assert.equal(format(c, input), out, `${c} ${JSON.stringify(input)}`);
 });
@@ -85,6 +93,16 @@ test("explains every rejection", () => {
     const r = parse(c, input);
     assert.equal(r.valid, false, `${c} ${String(input)}`);
     if (!r.valid) assert.equal(r.error, error, `${c} ${String(input)}`);
+  }
+});
+
+test("an empty field is valid exactly where no code is required", () => {
+  assert.deepEqual(parse("AR", ""), { valid: true, value: "", country: "AR" }); // optional in Argentina
+  assert.equal(format("BG", null), "");
+  assert.equal(parse("US", "").valid, false);
+  for (const c of getCountries()) {
+    const info = getCountryInfo(c)!;
+    assert.equal(parse(c, "").valid, !info.hasPostalCode || !info.required, c);
   }
 });
 

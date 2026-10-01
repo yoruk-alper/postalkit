@@ -2,10 +2,11 @@
 
 Validate, format and guess postal codes for **252 countries**. Accepts what people actually type, returns one canonical form to store, and tells you *why* a code was rejected.
 
-- **Zero dependencies. 4.1 kB gzipped** for the whole API (3.5 kB if you only use `isValid`).
+- **Zero dependencies. 4.2 kB gzipped** for the whole API (3.6 kB if you only use `isValid`).
 - **Forgiving input, canonical output.** `"k1a-0t6"`, `"K1A0T6"` and `" k1a  0t6 "` all become `K1A 0T6`.
 - **Never throws.** `null`, numbers from spreadsheets, objects: you always get a result.
-- **Correct about countries without postal codes.** An empty field is valid for the UAE, Hong Kong and 68 others.
+- **Correct about when a code is needed.** An empty field is valid for the 70 countries without postal codes (the UAE, Hong Kong, ...) and the 108 where addresses don't require one (Argentina, Bulgaria, ...).
+- **Reads any keyboard.** Full-width, Arabic, Persian, Devanagari, Bengali, Thai and other native digits are understood: `"۱۱۹۳۶۱۲۳۴۵"` is `11936-12345` in Iran.
 - **Built for forms:** field label, placeholder, `inputmode` and `maxlength` per country, validation *as you type* (`postalkit/partial`) and ready-made error messages (`postalkit/messages`).
 - Data from Google's libaddressinput (the dataset behind Chrome and Android address forms). Every pattern is fuzz-tested against Google's own, and tested against 22,484 real postal codes from 121 countries.
 
@@ -45,8 +46,8 @@ Measured by `npm run size`, `npm run compare` and `npm run bench` in this repo (
 
 |                                                    | postal-code-checker 2.3.0 | postalkit |
 | -------------------------------------------------- | ------------------------: | --------: |
-| Bundle, whole API (min + gzip)                     |                   21.0 kB |  **4.1 kB** |
-| Bundle, validation only (min + gzip)               |                    7.7 kB |  **3.5 kB** |
+| Bundle, whole API (min + gzip)                     |                   21.0 kB |  **4.2 kB** |
+| Bundle, validation only (min + gzip)               |                    7.7 kB |  **3.6 kB** |
 | Install size (unpacked, all entry points)          |                    288 kB |  **130 kB** |
 | Real-world inputs accepted/rejected correctly      |                     10/22 |   **22/22** |
 | Real-world inputs returned in canonical form       |                      2/22 |   **22/22** |
@@ -56,7 +57,7 @@ Measured by `npm run size`, `npm run compare` and `npm run bench` in this repo (
 | Countries                                          |                       249 | **252** (adds Kosovo, Ascension, Tristan da Cunha) |
 | Says why a code is invalid                         |                        no |   **yes** |
 | State/province from a postal code (23 countries)   |       yes, always bundled |   **yes, opt-in** (`postalkit/regions`) |
-| Core + regions (min + gzip)                        |                   21.0 kB |  **14.2 kB** |
+| Core + regions (min + gzip)                        |                   21.0 kB |  **14.3 kB** |
 | `validate(country, null)`                          |                    throws |   **returns a result** |
 | Validation while typing                            |                        no |   **yes, opt-in** (`postalkit/partial`) |
 | Tested against real postal codes                   |                        no |   **22,484 codes, 121 countries** |
@@ -75,7 +76,7 @@ type ParseResult =
 
 | `error`           | Meaning                                                           |
 | ----------------- | ----------------------------------------------------------------- |
-| `empty`           | Nothing entered, and the country uses postal codes                |
+| `empty`           | Nothing entered, and the country requires a postal code           |
 | `unknown-country` | The country isn't recognised                                      |
 | `not-applicable`  | Something was entered, but the country has no postal codes        |
 | `invalid-chars`   | A character that can't appear here (letter in a digits-only code) |
@@ -156,7 +157,7 @@ hasRegionData("DE");               // false
 
 ## As you type: `postalkit/partial`
 
-Whether what has been typed so far is valid, could still become valid, or can't. Use it to stay quiet while someone is typing a good code and speak up as soon as they can't succeed. It adds 2.5 kB gzipped, only if you import it.
+Whether what has been typed so far is valid, could still become valid, or can't. Use it to stay quiet while someone is typing a good code and speak up as soon as they can't succeed. It adds 2.6 kB gzipped, only if you import it.
 
 ```ts
 import { checkPartial } from "postalkit/partial";
@@ -169,6 +170,16 @@ checkPartial("SE", "SE-11");      // "partial"   country prefixes are understood
 checkPartial("US", "90210");      // "complete"  though ZIP+4 could follow
 ```
 
+`parseTyped` is `parse` with a better reason for a start that can't be completed: `"too-short"` only when more characters can help. Use it in forms, while typing and on blur.
+
+```ts
+import { parseTyped } from "postalkit/partial";
+
+parse("GB", "QQ1");               // { valid: false, error: "too-short", ... }       true, but unhelpful
+parseTyped("GB", "QQ1");          // { valid: false, error: "invalid-format", ... }  no postcode starts with QQ
+parseTyped("GB", "SW1A");         // { valid: false, error: "too-short", ... }       keep typing
+```
+
 For each country, the build turns the code pattern into a pattern for its prefixes and checks it against an independent backtracking matcher. The tests check that every prefix of every real postal code in the corpus is `"partial"`.
 
 ## Error messages: `postalkit/messages`
@@ -178,14 +189,20 @@ English messages that use the country's own word for the code. It adds 0.3 kB gz
 ```ts
 import { getErrorMessage, MESSAGES } from "postalkit/messages";
 
-getErrorMessage(parse("US", "9021"));     // "This ZIP code is too short (e.g. 95014)."
-getErrorMessage(parse("GB", ""));         // "Enter your postcode."
-getErrorMessage(parse("AE", "12345"));    // "This country doesn't use postal codes. Leave this field empty."
-getErrorMessage(parse("US", "90210"));    // null
+getErrorMessage(parse("US", "9021"));      // "This ZIP code is too short (e.g. 95014)."
+getErrorMessage(parse("US", "9021O"));     // "This ZIP code can only contain digits (e.g. 95014)."
+getErrorMessage(parseTyped("GB", "QQ1"));  // "This isn't a valid postcode (e.g. EC1Y 8SY)."
+getErrorMessage(parse("GB", ""));          // "Enter your postcode."
+getErrorMessage(parse("AE", "12345"));     // "This country doesn't use postal codes. Leave this field empty."
+getErrorMessage(parse("US", "90210"));     // null
 
-// Reword or translate some or all of them; {label} and {example} are filled in.
-getErrorMessage(parse("DE", "1011"), { "too-short": "Die Postleitzahl ist zu kurz (z. B. {example})." });
+// Translate: reword some or all messages, and name the code in your language.
+// {label} is the country's word for the code, {example} a valid one.
+const de = { "too-short": "Die {label} ist zu kurz (z. B. {example}).", "invalid-chars": "Die {label} enthält ungültige Zeichen." };
+getErrorMessage(parse("DE", "1011"), de, { "postal code": "Postleitzahl" }); // "Die Postleitzahl ist zu kurz (z. B. 26133)."
 ```
+
+Every `ParseError` has a message in `MESSAGES`, plus `"invalid-chars-digits"`, used instead of `"invalid-chars"` where codes are digits only. If you translate `"invalid-chars"` but not `"invalid-chars-digits"`, your wording is used for both.
 
 ## Territories
 
@@ -201,7 +218,7 @@ Store the country the user picked rather than one derived from the code.
 
 ## What "forgiving" means exactly
 
-Before matching, input is uppercased and converted with Unicode NFKC normalization (full-width characters become ASCII). Then spaces, dots, hyphens, en/em dashes, minus signs, `ー` and `〒` are removed. The result is matched against a separator-free pattern, and the canonical separator is put back. Then:
+Before matching, input is uppercased and converted with Unicode NFKC normalization (full-width characters become ASCII), and digits in any script (Arabic-Indic, Persian, Devanagari, Bengali, Thai, ...) become 0-9. Then spaces, dots, hyphens, en/em dashes, minus signs, `ー` and `〒` are removed. The result is matched against a separator-free pattern, and the canonical separator is put back. Then:
 
 - A country prefix is removed if the code only matches without it: the country's own code (`SE-`, `NL-`), Google's documented prefixes (`FL-` for Liechtenstein, `L-` for Luxembourg), and old European vehicle codes still common in address data (`D-`, `F-`, `A-`, `I-`, ...).
 - A fixed prefix is restored if it was left out, for countries whose codes are a fixed prefix plus digits: Latvia, Cayman Islands, Barbados, Andorra, Anguilla, Saint Vincent, British Virgin Islands.
@@ -211,8 +228,8 @@ Misplaced separators are accepted (`9021-01234` reads as `90210-1234`). People m
 ## Using it in a form
 
 ```ts
-import { getCountryInfo, parse } from "postalkit";
-import { checkPartial } from "postalkit/partial";
+import { getCountryInfo } from "postalkit";
+import { checkPartial, parseTyped } from "postalkit/partial";
 import { getErrorMessage } from "postalkit/messages";
 
 const info = getCountryInfo(country);
@@ -223,24 +240,23 @@ else {
   input.maxLength = info.inputMaxLength;
   input.autocomplete = "postal-code";
   label.textContent = info.label;
-  label.toggleAttribute("data-optional", !info.required);
+  label.toggleAttribute("data-optional", !info.required); // an empty optional field is valid
 }
 
 // While typing: speak up only when no more characters can help.
 input.addEventListener("input", () => {
-  const r = parse(country, input.value);
-  showError(checkPartial(country, input.value) === "invalid" && !r.valid
-    ? getErrorMessage(r.error === "too-short" ? { ...r, error: "invalid-format" } : r) // "QQ1" isn't short, it's wrong
-    : null);
+  showError(checkPartial(country, input.value) === "invalid" ? getErrorMessage(parseTyped(country, input.value)) : null);
 });
 
 // On blur: the full verdict, and the canonical form back in the field.
 input.addEventListener("blur", () => {
-  const r = parse(country, input.value);
+  const r = parseTyped(country, input.value);
   if (r.valid) input.value = r.value;
   showError(getErrorMessage(r));
 });
 ```
+
+If your carrier needs a postal code even where addresses don't, require `r.value !== ""` yourself.
 
 [The playground](./playground/index.html) is this pattern, working.
 
@@ -289,18 +305,17 @@ const Address = v.pipe(
 
 ```tsx
 import { useState } from "react";
-import { getCountryInfo, parse } from "postalkit";
-import { checkPartial } from "postalkit/partial";
+import { getCountryInfo } from "postalkit";
+import { checkPartial, parseTyped } from "postalkit/partial";
 import { getErrorMessage } from "postalkit/messages";
 
 export function usePostalCode(country: string) {
   const [value, setValue] = useState("");
   const [blurred, setBlurred] = useState(false);
   const info = getCountryInfo(country);
-  const r = parse(country, value);
-  const hopeless = checkPartial(country, value) === "invalid";
-  const error = r.valid || (!blurred && !hopeless) ? null
-    : getErrorMessage(hopeless && r.error === "too-short" ? { ...r, error: "invalid-format" } : r);
+  const r = parseTyped(country, value);
+  // While typing, only when no more characters can help; after blur, always.
+  const error = blurred || checkPartial(country, value) === "invalid" ? getErrorMessage(r) : null;
   return {
     info,
     error,

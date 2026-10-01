@@ -12,7 +12,7 @@ export interface Override {
   alts?: (compact: string) => Alt[];
   /** Replace the derived format (single-alternative countries). */
   format?: string;
-  /** Which upstream example to show as the placeholder (default: the first). */
+  /** Which upstream example to show as the placeholder (default: the first). A `widens` override may use a code only it accepts. */
   example?: string;
   /** Deliberately stricter than upstream; tests then skip "accepts everything Google accepts". */
   narrows?: boolean;
@@ -67,6 +67,7 @@ export const OVERRIDES: Record<string, Override> = {
       + "addresses use: every GeoNames code is 4-digit, and upstream's own region prefixes (B?[1-36-8]) allow it",
     alts: (rx) => [[rx, ""], ["\\d{4}", ""]],
     widens: true,
+    example: "1070",
   },
   AS: US_ZIP,
   FM: US_ZIP,

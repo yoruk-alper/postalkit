@@ -3,11 +3,25 @@
 
 // Spaces, dots, hyphens and dashes (U+2010-U+2015), minus (U+2212), "ー" (U+30FC, typed as a dash in Japanese), "〒".
 const SEPARATORS = /[\s.\-_‐-―−ー〒]/g;
+const DIGIT = /\p{Nd}/u;
 
-/** Uppercase, fold full-width characters, drop every separator. Non-strings become "". */
+/** The value of a decimal digit in any script ("٣", "۳", "३", "๓" are all 3). */
+function digit(d: string): string {
+  // Unicode encodes decimal digits in contiguous runs of ten, 0 to 9, so a digit's
+  // value is how many digits precede it in its run (mod 10 for runs that abut).
+  const c = d.codePointAt(0)!;
+  let n = 0;
+  while (DIGIT.test(String.fromCodePoint(c - 1 - n))) n++;
+  return "" + (n % 10);
+}
+
+/** Uppercase, fold full-width characters and native-script digits, drop every separator. Non-strings become "". */
 export function clean(input: unknown): string {
   // Whole numbers only: 9021.5 must not become "90215" once the dot is dropped.
   let s = typeof input === "string" ? input : Number.isInteger(input) && (input as number) >= 0 ? "" + input : "";
-  if (/[^\x20-\x7e]/.test(s) && s.normalize) s = s.normalize("NFKC");
+  if (/[^\x20-\x7e]/.test(s)) {
+    if (s.normalize) s = s.normalize("NFKC");
+    s = s.replace(/(?![0-9])\p{Nd}/gu, digit);
+  }
   return s.toUpperCase().replace(SEPARATORS, "");
 }

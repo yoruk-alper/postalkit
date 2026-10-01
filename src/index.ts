@@ -8,7 +8,7 @@ export type CountryInput = CountryCode | Lowercase<CountryCode> | (string & {});
 
 /** Why a code was rejected. See the README for what each one means and when it happens. */
 export type ParseError =
-  | "empty" // nothing to check, but the country uses postal codes
+  | "empty" // nothing entered, and the country requires a postal code
   | "unknown-country"
   | "not-applicable" // the country has no postal codes, yet something was entered
   | "invalid-chars"
@@ -170,7 +170,7 @@ function run(country: unknown, code: unknown): [Rule | undefined, string, string
   const s = clean(code);
   if (!r) return [r, s, s, null];
   if (!r.r.length) return [r, s, s, s ? null : ""];
-  if (!s) return [r, s, s, null];
+  if (!s) return [r, s, s, r.fl.includes("R") ? null : ""]; // empty is fine where a code is optional
   const [t, value] = attempt(r, s, true);
   return [r, s, t, value];
 }
@@ -208,7 +208,7 @@ export function parseMany(country: CountryInput, codes: Iterable<unknown>): Pars
 
 /**
  * Whether `code` is acceptable as the postal code for `country`.
- * An empty value is valid for countries without postal codes.
+ * An empty value is valid where a postal code isn't required (see `CountryInfo.required`).
  */
 export function isValid(country: CountryInput, code: unknown): boolean {
   return run(country, code)[3] !== null;

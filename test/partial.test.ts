@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { getCountries, getCountryInfo, isValid } from "../src/index.ts";
-import { checkPartial } from "../src/partial.ts";
+import { getCountries, getCountryInfo, isValid, parse } from "../src/index.ts";
+import { checkPartial, parseTyped } from "../src/partial.ts";
 import { mutate, prng } from "../scripts/regex.ts";
 
 const corpus = JSON.parse(readFileSync(new URL("../data/corpus.json", import.meta.url), "utf8")) as {
@@ -33,6 +33,8 @@ test("tells complete, still-typing and hopeless input apart", () => {
     ["IE", "D6W", "partial"],
     ["AR", "14", "partial"],
     ["AE", "", "complete"], // no postal codes: empty is the valid answer
+    ["AR", "", "complete"], // a postal code is optional in Argentina
+    ["IR", "۱۱۹۳", "partial"], // Persian digits, mid-entry
     ["AE", "1", "invalid"],
     ["XX", "1", "invalid"],
   ];
@@ -70,4 +72,23 @@ test("complete exactly when parse accepts, and never throws", () => {
     }
   }
   for (const c of [null, undefined, 42, {}, "__proto__", "constructor"]) assert.equal(checkPartial(c as string, "1"), "invalid");
+});
+
+test("parseTyped calls a start that can't be completed invalid, not short", () => {
+  assert.deepEqual(parseTyped("GB", "QQ1"), { valid: false, error: "invalid-format", country: "GB" });
+  assert.deepEqual(parseTyped("GB", "SW1A"), { valid: false, error: "too-short", country: "GB" });
+  assert.deepEqual(parseTyped("CA", "D1A"), { valid: false, error: "invalid-format", country: "CA" });
+  assert.deepEqual(parseTyped("US", "90210"), { valid: true, value: "90210", country: "US" });
+  // Otherwise identical to parse.
+  for (const cc of getCountries()) {
+    const rnd = prng(cc.charCodeAt(0) * 211 + cc.charCodeAt(1));
+    const ex = getCountryInfo(cc)!.example;
+    for (let i = 0; i < 30; i++) {
+      const x = mutate(ex, rnd).slice(0, Math.floor(rnd() * (ex.length + 2)));
+      const a = parse(cc, x);
+      const b = parseTyped(cc, x);
+      if (!a.valid && a.error === "too-short" && checkPartial(cc, x) === "invalid") assert.equal(!b.valid && b.error, "invalid-format", `${cc} ${x}`);
+      else assert.deepEqual(b, a, `${cc} ${JSON.stringify(x)}`);
+    }
+  }
 });
