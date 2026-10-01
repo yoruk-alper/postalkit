@@ -237,6 +237,7 @@ export const NONE = "${none.join("")}";
  */
 export const ALPHA3 = "${all.map((cc) => (alpha3[cc].startsWith(cc) ? alpha3[cc][2].toLowerCase() : alpha3[cc])).join("")}";
 
+/** ISO 3166-1 alpha-2 code of a supported country or territory (252, including XK for Kosovo). */
 export type CountryCode =
 ${all.map((cc) => `  | "${cc}"`).join("\n")};
 `;

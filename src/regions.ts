@@ -3,6 +3,7 @@
 import { parse, type CountryCode, type CountryInput } from "./index.ts";
 import { REGIONS } from "./regions-data.ts";
 
+/** A state, province or other first-level subdivision. */
 export interface Region {
   /** ISO 3166-2 code without the country prefix ("CA" for US-CA), or null where none exists (US military "AE"). */
   code: string | null;

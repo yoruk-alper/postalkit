@@ -48,7 +48,7 @@ execFileSync(
   { stdio: "inherit" },
 );
 const read = (f: string) => readFileSync(new URL(f, tmp), "utf8");
-const union = /export type CountryCode =[\s\S]*?;/.exec(read("data.d.ts"))![0];
+const union = /(?:\/\*\*(?:(?!\*\/)[\s\S])*\*\/\n)?export type CountryCode =[\s\S]*?;/.exec(read("data.d.ts"))![0];
 const core = read("index.d.ts")
   .replace(/import \{[^}]*\} from "\.\/data\.ts";\n/, "")
   .replace(/export type \{ CountryCode \};\n/, union + "\n");

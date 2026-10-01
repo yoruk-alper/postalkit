@@ -93,6 +93,7 @@
     "typecheck": "tsc --noEmit",
     "test": "node --test \"test/*.test.ts\"",
     "corpus": "node scripts/fetch-corpus.ts",
+    "docs": "npx -y -p typedoc@0.28 -p typescript@6.0 typedoc",
     "size": "node scripts/size.ts --compare",
     "compare": "node scripts/compare.ts",
     "bench": "node scripts/bench.ts",

@@ -1,0 +1,11 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+  "entryPoints": ["src/index.ts", "src/regions.ts", "src/partial.ts", "src/messages.ts"],
+  "out": "docs",
+  "name": "postalkit",
+  "readme": "none",
+  "disableSources": true,
+  "skipErrorChecking": true,
+  "validation": { "notDocumented": true },
+  "treatWarningsAsErrors": true
+}

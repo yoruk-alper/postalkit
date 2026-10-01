@@ -5,6 +5,7 @@ export type { CountryCode };
 /** Alpha-2 ("US"), alpha-3 ("USA"), any case. Unknown strings are accepted and reported as "unknown-country". */
 export type CountryInput = CountryCode | Lowercase<CountryCode> | (string & {});
 
+/** Why a code was rejected. See the README for what each one means and when it happens. */
 export type ParseError =
   | "empty" // nothing to check, but the country uses postal codes
   | "unknown-country"
@@ -14,12 +15,30 @@ export type ParseError =
   | "too-long"
   | "invalid-format";
 
+/** The outcome of {@link parse}: the canonical value, or why the code was rejected. */
 export type ParseResult =
-  | { valid: true; value: string; country: CountryCode }
-  | { valid: false; error: ParseError; country: CountryCode | null };
+  | {
+      /** The code is acceptable. */
+      valid: true;
+      /** The canonical form to store and display ("K1A 0T6"); "" for a country without postal codes. */
+      value: string;
+      /** The country as an alpha-2 code, whichever form it was given in. */
+      country: CountryCode;
+    }
+  | {
+      /** The code was rejected. */
+      valid: false;
+      /** Why. */
+      error: ParseError;
+      /** The country as an alpha-2 code, or null when it isn't recognised. */
+      country: CountryCode | null;
+    };
 
+/** What a form needs to know about a country's postal codes, from {@link getCountryInfo}. */
 export interface CountryInfo {
+  /** ISO 3166-1 alpha-2 code. */
   code: CountryCode;
+  /** ISO 3166-1 alpha-3 code. */
   alpha3: string;
   /** False for the ~70 countries without postal codes: hide the field. */
   hasPostalCode: boolean;
