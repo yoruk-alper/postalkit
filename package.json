@@ -3,6 +3,14 @@
   "version": "0.1.0",
   "description": "Validate, format and guess postal codes for 252 countries. Forgiving input, one canonical output, a reason for every rejection. Zero dependencies, under 4 kB gzipped.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/OWNER/postalkit.git"
+  },
+  "homepage": "https://github.com/OWNER/postalkit#readme",
+  "bugs": {
+    "url": "https://github.com/OWNER/postalkit/issues"
+  },
   "type": "module",
   "sideEffects": false,
   "exports": {
@@ -31,6 +39,13 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.js",
   "types": "./dist/index.d.ts",
+  "typesVersions": {
+    "*": {
+      "regions": [
+        "./dist/regions.d.ts"
+      ]
+    }
+  },
   "files": [
     "dist",
     "NOTICE"
@@ -54,8 +69,9 @@
     "size": "node scripts/size.ts --compare",
     "compare": "node scripts/compare.ts",
     "bench": "node scripts/bench.ts",
-    "check": "npm run data && npm run typecheck && npm run build && npm test && npm run size",
-    "prepublishOnly": "npm run check"
+    "check": "npm run data && npm run typecheck && npm run build && npm test && npm run size && npm run lint:pkg",
+    "prepublishOnly": "npm run check",
+    "lint:pkg": "publint && attw --pack ."
   },
   "keywords": [
     "postal-code",
@@ -70,9 +86,11 @@
     "zero-dependencies"
   ],
   "devDependencies": {
+    "@arethetypeswrong/cli": "^0.18.5",
     "@types/node": "^26.6.3",
     "esbuild": "^0.28.2",
     "postal-code-checker": "^2.3.0",
+    "publint": "^0.3.24",
     "typescript": "^7.0.2"
   }
 }
