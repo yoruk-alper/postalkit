@@ -3,7 +3,7 @@
 import { brotliCompressSync, gzipSync } from "node:zlib";
 import { build } from "esbuild";
 
-const BUDGET_GZIP = 4400; // bytes, minified + gzip, whole API (4300 until native-script digits, about 90 bytes)
+const BUDGET_GZIP = 4400; // bytes, minified + gzip, whole API
 // What each optional entry point adds on top of the core, minified + gzip.
 const EXTRA_BUDGETS_GZIP: Record<string, number> = { partial: 2700, messages: 400 };
 
