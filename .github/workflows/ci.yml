@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check (data, types, build, tests, size, package)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - name: Generated files are committed
+        run: git diff --exit-code
+      - run: npm run compare
+      - run: npm pack
+      - uses: actions/upload-artifact@v7
+        with:
+          name: package
+          path: postalkit-*.tgz
+
+  consumers:
+    # What users run: the packed tarball, installed into a fresh project, on every supported Node.
+    name: Consumer on Node ${{ matrix.node }}
+    needs: check
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [14, 16, 18, 20, 22, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/download-artifact@v8
+        with:
+          name: package
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install the tarball into a fresh project
+        run: |
+          mkdir consumer
+          cd consumer
+          echo '{"name":"consumer","private":true}' > package.json
+          npm install ../postalkit-*.tgz
+          cp ../test/smoke.cjs ../test/smoke.mjs .
+      - run: node smoke.cjs
+        working-directory: consumer
+      - run: node smoke.mjs
+        working-directory: consumer

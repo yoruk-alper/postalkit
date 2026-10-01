@@ -1,0 +1,21 @@
+name: Upstream data
+
+# Fails when Google's libaddressinput data differs from data/upstream.json.
+# To update: npm run fetch && npm run data, review the diff, then npm run check.
+on:
+  schedule:
+    - cron: "17 6 * * 1" # Mondays 06:17 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+      - run: node scripts/fetch.ts --check
