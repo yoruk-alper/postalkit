@@ -2,19 +2,22 @@
 
 [![npm](https://img.shields.io/npm/v/postalkit)](https://www.npmjs.com/package/postalkit)
 [![CI](https://github.com/yoruk-alper/postalkit/actions/workflows/ci.yml/badge.svg)](https://github.com/yoruk-alper/postalkit/actions/workflows/ci.yml)
-[![minzipped size](https://img.shields.io/bundlejs/size/postalkit)](https://bundlejs.com/?q=postalkit)
 [![types](https://img.shields.io/npm/types/postalkit)](https://www.npmjs.com/package/postalkit)
 [![license](https://img.shields.io/npm/l/postalkit)](./LICENSE)
 
 Validate and format postal codes for **252 countries**. Accepts what people actually type, returns one canonical form to store, and tells you *why* a code was rejected.
 
-- **Zero dependencies. 4.2 kB gzipped** for the whole API (3.7 kB if you only use `isValid`).
-- **Forgiving input, canonical output.** `"k1a-0t6"`, `"K1A0T6"` and `" k1a  0t6 "` all become `K1A 0T6`.
-- **Never throws.** `null`, numbers from spreadsheets, objects: you always get a result. A ZIP code a spreadsheet stored as `2134` gets its leading zero back: `02134`.
-- **Correct about when a code is needed.** An empty field is valid for the 70 countries without postal codes (the UAE, Hong Kong, ...) and the 108 where addresses don't require one (Argentina, Bulgaria, ...).
-- **Reads any keyboard.** Full-width, Arabic, Persian, Devanagari, Bengali, Thai and other native digits are understood: `"۱۱۹۳۶۱۲۳۴۵"` is `11936-12345` in Iran.
-- **Built for forms:** field label, placeholder, `inputmode` and `maxlength` per country, validation *as you type* (`postalkit/partial`) and ready-made error messages (`postalkit/messages`).
-- Data from Google's libaddressinput (the dataset behind Chrome and Android address forms). Every pattern is fuzz-tested against Google's own, and tested against 22,484 real postal codes from 121 countries.
+**[Try it in the playground](https://yoruk-alper.github.io/postalkit/playground/)** · [API reference](https://yoruk-alper.github.io/postalkit/api/)
+
+- **Forgiving input, canonical output.** `"k1a-0t6"`, `"K1A0T6"` and `" k1a  0t6 "` all become `K1A 0T6`. A ZIP code a spreadsheet stored as the number `2134` gets its leading zero back: `02134`.
+- **Reads any keyboard.** Full-width, Arabic, Persian, Devanagari, Bengali, Thai and other native digits: `"۱۱۹۳۶۱۲۳۴۵"` is `11936-12345` in Iran.
+- **A reason for every rejection,** and it never throws: `null`, numbers and objects all get a result.
+- **Knows when a code is needed.** An empty field is valid for the 70 countries without postal codes (the UAE, Hong Kong, ...) and the 108 where addresses don't require one (Argentina, Bulgaria, ...).
+- **Built for forms.** Field label, placeholder, `inputmode` and `maxlength` per country, validation as you type, and ready-made error messages.
+- **Tested against reality.** Data from Google's libaddressinput (behind Chrome and Android address forms), fuzz-tested against Google's own patterns and checked against 22,484 real postal codes from 121 countries.
+- **Small.** Zero dependencies, 4.2 kB gzipped for the whole core API (3.7 kB if you only use `isValid`).
+
+## Quick start
 
 ```bash
 npm install postalkit
@@ -25,7 +28,7 @@ import { parse, isValid, format, getCountryInfo } from "postalkit";
 
 format("CA", "k1a0t6");          // "K1A 0T6"
 format("US", "902101234");       // "90210-1234"
-format("JP", "１００－０００１");    // "100-0001"   full-width input from a Japanese keyboard
+format("JP", "１００－０００１");  // "100-0001"   full-width input from a Japanese keyboard
 format("SE", "SE-114 55");       // "114 55"     country prefix removed
 format("LV", "1050");            // "LV-1050"    required prefix restored
 
@@ -40,20 +43,25 @@ getCountryInfo("US");
 //   example: "95014", numeric: true, inputMaxLength: 16 }
 ```
 
-[Try it in the playground](https://yoruk-alper.github.io/postalkit/playground/) · [API reference](https://yoruk-alper.github.io/postalkit/api/)
+Three optional entry points add more, and cost nothing unless you import them:
 
-**Contents:** [Compatibility](#compatibility) · [API](#api) · [Regions](#regions-postalkitregions) · [As you type](#as-you-type-postalkitpartial) · [Error messages](#error-messages-postalkitmessages) · [Territories](#territories) · [Forms](#using-it-in-a-form) · [Recipes](#recipes) · [Data](#data) · [Limitations](#limitations)
+| Import | Adds | gzipped |
+| --- | --- | --- |
+| [`postalkit/regions`](#regions-postalkitregions) | The state or province of a postal code | 10 kB |
+| [`postalkit/partial`](#as-you-type-postalkitpartial) | Validation while the code is still being typed | 2.6 kB |
+| [`postalkit/messages`](#error-messages-postalkitmessages) | English error messages, translatable | 0.4 kB |
 
-## Compatibility
+## Contents
 
-- **Node 14 and later.** CI installs the packed package on Node 14 through 24.
-- **Browsers:** current Chrome, Firefox and Safari, which CI tests (Chromium, Firefox and WebKit, unbundled and through Vite and webpack). Older browsers work from Chrome 64, Firefox 78 and Safari 11.1, the first with the Unicode regex features postalkit uses; those versions aren't tested. `getCountryName` returns the code itself where `Intl.DisplayNames` is missing (before Chrome 81, Firefox 86, Safari 14.1).
-- **ES modules and CommonJS**, with TypeScript types for both. No build step, polyfills or configuration needed.
-- **Tree-shakeable** (`sideEffects: false`): bundlers keep only what you import.
+- [API](#api): [`parse`](#parsecountry-code-parseresult) · [`isValid`](#isvalidcountry-code-boolean) · [`format`](#formatcountry-code-string--null) · [`getCountryInfo`](#getcountryinfocountry-countryinfo--null) · [`getCountries`](#getcountries-countrycode) · [`getCountryName`](#getcountrynamecountry-locale--en-string)
+- [What input is accepted](#what-input-is-accepted) · [Territories](#territories)
+- [Regions](#regions-postalkitregions) · [As you type](#as-you-type-postalkitpartial) · [Error messages](#error-messages-postalkitmessages)
+- [Using it in a form](#using-it-in-a-form) · [Recipes: Zod, Valibot, React](#recipes)
+- [Data and testing](#data-and-testing) · [Limitations](#limitations) · [Compatibility](#compatibility) · [Versioning](#versioning) · [Contributing](#contributing)
 
 ## API
 
-All functions accept the country as alpha-2 (`"US"`) or alpha-3 (`"USA"`), in any case. `"UK"` and `"EL"` are accepted for GB and GR.
+Every function accepts the country as alpha-2 (`"US"`) or alpha-3 (`"USA"`), in any case. `"UK"` and `"EL"` are accepted for GB and GR.
 
 ### `parse(country, code): ParseResult`
 
@@ -73,13 +81,13 @@ type ParseResult =
 | `too-long`        | Too long for any code in this country                             |
 | `invalid-format`  | Right length and characters, but not a code this country issues   |
 
-Codes that a spreadsheet turned into numbers are handled: in digits-only countries, leading zeros it dropped are restored (`parse("US", 2134)` gives `02134`, `parse("IT", 100)` gives `00100`). Only whole numbers can be codes; `9021.5` and `-90210` are `invalid-chars`.
+Numbers are accepted, for codes that a spreadsheet stored as numbers. In digits-only countries the leading zeros it dropped are restored: `parse("US", 2134)` gives `02134`, `parse("IT", 100)` gives `00100`. Only whole numbers can be codes; `9021.5` and `-90210` are `invalid-chars`.
 
-For a whole column (a CSV import, a bulk upload), map over it:
+To check a whole column, such as a CSV import:
 
 ```ts
-const results = rows.map((r) => parse("US", r.zip));
-const bad = rows.filter((_, i) => !results[i].valid);
+const invalid = rows.filter((row) => !isValid("US", row.zip));
+const cleaned = rows.map((row) => ({ ...row, zip: format("US", row.zip) })); // null where invalid
 ```
 
 ### `isValid(country, code): boolean`
@@ -117,9 +125,26 @@ All 252 codes, alphabetically.
 
 The localized name from the runtime's built-in `Intl.DisplayNames`, so no names are bundled. `getCountryName("DE", "tr")` returns `"Almanya"`. Falls back to the code where `Intl` is unavailable.
 
+## What input is accepted
+
+Before matching, input is uppercased and converted with Unicode NFKC normalization (full-width characters become ASCII), and digits in any script (Arabic-Indic, Persian, Devanagari, Bengali, Thai, ...) become 0-9. Then spaces, dots, hyphens, en/em dashes, minus signs, `ー` and `〒` are removed, along with invisible characters copied from web pages (zero-width spaces, soft hyphens). The result is matched against a separator-free pattern, and the canonical separator is put back. Then:
+
+- **A country prefix is removed** if the code only matches without it: the country's own code (`SE-`, `SWE-`, `NL-`), Google's documented prefixes (`FL-` for Liechtenstein, `L-` for Luxembourg), and old European vehicle codes still common in address data (`D-`, `F-`, `A-`, `I-`, ...).
+- **A fixed prefix is restored** if it was left out, for countries whose codes are a fixed prefix plus digits: Latvia, Cayman Islands, Barbados, Andorra, Anguilla, Saint Vincent, British Virgin Islands.
+- **Misplaced separators are accepted:** `9021-01234` reads as `90210-1234`. People make that mistake far more often than they mean a different code, and the canonical output shows them what was understood.
+
+### Territories
+
+Territories with their own ISO 3166 code are countries of their own here, as in Google's data: Puerto Rico, Guam, the US Virgin Islands, Åland, Guadeloupe, Réunion, Svalbard and others. Their codes are also valid under the parent's system, because that is how mail to them is addressed:
+
+```ts
+parse("PR", "00901").valid;   // true
+parse("US", "00901").valid;   // true
+```
+
 ## Regions: `postalkit/regions`
 
-Which state or province a postal code belongs to, offline. Use it to fill in the state field from a ZIP code. It's a separate import, so apps that don't need it pay nothing: it adds 10 kB gzipped on top of the core.
+Which state or province a postal code belongs to, offline. Use it to fill in the state field from a ZIP code.
 
 ```ts
 import { findRegions, getRegions, hasRegionData, isInRegion } from "postalkit/regions";
@@ -137,11 +162,11 @@ hasRegionData("DE");               // false
 - **Always a list:** some prefixes belong to more than one region.
 - **`code`** is the ISO 3166-2 code without the country prefix (`"CA"` for US-CA), or `null` where there isn't one (US military "Armed Forces" regions, Spain's provinces).
 - **`name`** is in English or the Latin alphabet ("Hokkaido", not 北海道).
-- **The code is validated first,** so an invalid postal code never returns a guess.
+- **The postal code is validated first,** so an invalid one never returns a guess.
 
 ## As you type: `postalkit/partial`
 
-Whether what has been typed so far is valid, could still become valid, or can't. Use it to stay quiet while someone is typing a good code and speak up as soon as they can't succeed. It adds 2.6 kB gzipped, only if you import it.
+Whether what has been typed so far is valid, could still become valid, or can't. Use it to stay quiet while someone is typing a good code, and speak up as soon as they can't succeed.
 
 ```ts
 import { checkPartial } from "postalkit/partial";
@@ -164,11 +189,11 @@ parseTyped("GB", "QQ1");          // { valid: false, error: "invalid-format", ..
 parseTyped("GB", "SW1A");         // { valid: false, error: "too-short", ... }       keep typing
 ```
 
-For each country, the build turns the code pattern into a pattern for its prefixes and checks it against an independent backtracking matcher. The tests check that every prefix of every real postal code in the corpus is `"partial"`.
+Tests check that every prefix of every real postal code in the test corpus is `"partial"`.
 
 ## Error messages: `postalkit/messages`
 
-English messages that use the country's own word for the code. It adds 0.3 kB gzipped.
+English messages that use the country's own word for the code.
 
 ```ts
 import { getErrorMessage, MESSAGES } from "postalkit/messages";
@@ -179,32 +204,20 @@ getErrorMessage(parseTyped("GB", "QQ1"));  // "This isn't a valid postcode (e.g.
 getErrorMessage(parse("GB", ""));          // "Enter your postcode."
 getErrorMessage(parse("AE", "12345"));     // "This country doesn't use postal codes. Leave this field empty."
 getErrorMessage(parse("US", "90210"));     // null
+```
 
-// Translate: reword some or all messages, and name the code in your language.
-// {label} is the country's word for the code, {example} a valid one.
-const de = { "too-short": "Die {label} ist zu kurz (z. B. {example}).", "invalid-chars": "Die {label} enthält ungültige Zeichen." };
-getErrorMessage(parse("DE", "1011"), de, { "postal code": "Postleitzahl" }); // "Die Postleitzahl ist zu kurz (z. B. 26133)."
+To translate, reword some or all messages and name the code in your language. `{label}` is the country's word for the code, `{example}` a valid one:
+
+```ts
+const de = {
+  "too-short": "Die {label} ist zu kurz (z. B. {example}).",
+  "invalid-chars": "Die {label} enthält ungültige Zeichen.",
+};
+getErrorMessage(parse("DE", "1011"), de, { "postal code": "Postleitzahl" });
+// "Die Postleitzahl ist zu kurz (z. B. 26133)."
 ```
 
 Every `ParseError` has a message in `MESSAGES`, plus `"invalid-chars-digits"`, used instead of `"invalid-chars"` where codes are digits only. If you translate `"invalid-chars"` but not `"invalid-chars-digits"`, your wording is used for both.
-
-## Territories
-
-Territories with their own ISO 3166 code are countries of their own here, as in Google's data: Puerto Rico, Guam, the US Virgin Islands, Åland, Guadeloupe, Réunion, Svalbard and others. Their codes are also valid under the parent's system, because that is how mail to them is addressed:
-
-```ts
-parse("PR", "00901").valid;   // true
-parse("US", "00901").valid;   // true
-```
-
-## What "forgiving" means exactly
-
-Before matching, input is uppercased and converted with Unicode NFKC normalization (full-width characters become ASCII), and digits in any script (Arabic-Indic, Persian, Devanagari, Bengali, Thai, ...) become 0-9. Then spaces, dots, hyphens, en/em dashes, minus signs, `ー` and `〒` are removed. The result is matched against a separator-free pattern, and the canonical separator is put back. Then:
-
-- A country prefix is removed if the code only matches without it: the country's own code (`SE-`, `NL-`), Google's documented prefixes (`FL-` for Liechtenstein, `L-` for Luxembourg), and old European vehicle codes still common in address data (`D-`, `F-`, `A-`, `I-`, ...).
-- A fixed prefix is restored if it was left out, for countries whose codes are a fixed prefix plus digits: Latvia, Cayman Islands, Barbados, Andorra, Anguilla, Saint Vincent, British Virgin Islands.
-
-Misplaced separators are accepted (`9021-01234` reads as `90210-1234`). People make that mistake far more often than they mean a different code, and the canonical output shows the user what was understood.
 
 ## Using it in a form
 
@@ -220,7 +233,7 @@ else {
   input.inputMode = info.numeric ? "numeric" : "text";
   input.maxLength = info.inputMaxLength;
   input.autocomplete = "postal-code";
-  label.textContent = info.label;
+  label.textContent = info.label[0].toUpperCase() + info.label.slice(1); // "ZIP code", "Postcode"
   label.toggleAttribute("data-optional", !info.required); // an empty optional field is valid
 }
 
@@ -237,9 +250,7 @@ input.addEventListener("blur", () => {
 });
 ```
 
-If your carrier needs a postal code even where addresses don't, require `r.value !== ""` yourself.
-
-[The playground](https://yoruk-alper.github.io/postalkit/playground/) is this pattern, working.
+If your carrier needs a postal code even where addresses don't, require `r.value !== ""` yourself. [The playground](https://yoruk-alper.github.io/postalkit/playground/) is this pattern, working.
 
 ## Recipes
 
@@ -285,7 +296,7 @@ const Address = v.pipe(
 ### React
 
 ```tsx
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import { getCountryInfo } from "postalkit";
 import { checkPartial, parseTyped } from "postalkit/partial";
 import { getErrorMessage } from "postalkit/messages";
@@ -303,7 +314,7 @@ export function usePostalCode(country: string) {
     value: r.valid ? r.value : null, // canonical, or null while invalid
     inputProps: {
       value,
-      onChange: (e: React.ChangeEvent<HTMLInputElement>) => setValue(e.target.value),
+      onChange: (e: ChangeEvent<HTMLInputElement>) => setValue(e.target.value),
       onBlur: () => { setBlurred(true); if (r.valid) setValue(r.value); },
       placeholder: info?.example,
       inputMode: info?.numeric ? ("numeric" as const) : ("text" as const),
@@ -314,48 +325,38 @@ export function usePostalCode(country: string) {
 }
 ```
 
-## Data
+## Data and testing
 
-Patterns come from Google's [libaddressinput](https://github.com/google/libaddressinput) data (CC-BY 4.0, see [NOTICE](./NOTICE)). The build (`scripts/build-data.ts`):
+Patterns come from Google's [libaddressinput](https://github.com/google/libaddressinput) data (CC-BY 4.0, see [NOTICE](./NOTICE)), with documented corrections in [`scripts/overrides.ts`](./scripts/overrides.ts), each with a reason. Some make patterns stricter than Google's where Google's are too loose: Irish Eircodes accept only the letters Eircodes really use. Every optimized pattern is fuzz-tested against Google's original, and CI checks Google's data weekly and fails when it changes.
 
-1. removes separators from each pattern and derives the canonical separator position from Google's examples;
-2. applies documented corrections ([`scripts/overrides.ts`](./scripts/overrides.ts)), each with a reason. The build fails if one stops applying. Some make patterns stricter than Google's where Google's are too loose (Irish Eircodes accept only the letters Eircodes really use);
-3. optimizes every pattern (the UK area list becomes a prefix tree) and fuzz-tests it against the original;
-4. checks that every canonical form it produces still satisfies Google's original pattern, unless an override deliberately accepts more (Argentina's 4-digit codes, see below);
-5. derives the prefix patterns for `postalkit/partial` and checks them against a backtracking matcher.
+Matching Google's patterns only proves postalkit agrees with Google, so it's also tested against reality: [`data/corpus.json`](./data/corpus.json) holds 22,484 real postal codes from 121 countries, sampled from [GeoNames](https://www.geonames.org/), and every one must be accepted. This is why Argentina's 4-digit codes (`1425`) are accepted along with the full CPA (`C1425CJD`): Google's pattern only allows the CPA, but the 4-digit form is what addresses use. The same corpus checks `findRegions`: it agrees with GeoNames for at least 99% of codes in the US, Canada, Japan, India and Australia.
 
-CI checks Google's data weekly ([`upstream.yml`](./.github/workflows/upstream.yml)) and fails when it changes.
-
-**Real-world test.** Matching Google's patterns only proves postalkit agrees with Google. [`data/corpus.json`](./data/corpus.json) holds 22,484 real postal codes from 121 countries, sampled from [GeoNames](https://www.geonames.org/) (CC-BY 4.0; test data only, not in the package), and [`test/corpus.test.ts`](./test/corpus.test.ts) requires every one of them to be accepted. The rare exceptions are GeoNames quirks, listed with reasons, and the test fails when one stops applying. This test is why Argentina's 4-digit codes (`1425`) are accepted along with the full CPA (`C1425CJD`): Google's pattern only allows the CPA, but the 4-digit form is what addresses use. The corpus also checks `findRegions` against the state or province GeoNames gives: they agree for at least 99% of codes in the US, Canada, Japan, India and Australia.
+How the data is built is described in [CONTRIBUTING.md](./CONTRIBUTING.md#how-the-data-is-built).
 
 ## Limitations
 
 - **Format, not existence.** `SW1A 9ZZ` has a valid format, but whether it is anyone's postcode takes an address-verification service.
-- **As good as the data.** Patterns follow Google's libaddressinput, plus the corrections in [`scripts/overrides.ts`](./scripts/overrides.ts). Where Google says a country has no postal codes (UAE, Hong Kong, Panama, ...), postalkit does too.
+- **As good as the data.** Where Google says a country has no postal codes (UAE, Hong Kong, Panama, ...), postalkit does too.
 - **Regions** cover 23 countries and work by code prefix, so a code near a border can return two regions.
-- **CEDEX.** `"75008 CEDEX"` is rejected (`invalid-chars`): the CEDEX part belongs on the city line (`75008 PARIS CEDEX 08`), the postal code is `75008`.
+- **CEDEX.** `"75008 CEDEX"` is rejected (`invalid-chars`): the CEDEX part belongs on the city line (`75008 PARIS CEDEX 08`), and the postal code is `75008`.
+
+## Compatibility
+
+- **Node 14 and later.** CI installs the packed package on Node 14 through 24.
+- **Browsers:** current Chrome, Firefox and Safari, tested in CI both unbundled and through Vite and webpack. Older browsers from Chrome 64, Firefox 78 and Safari 11.1 should work (the first with the Unicode regex features postalkit uses) but aren't tested. Where `Intl.DisplayNames` is missing (before Chrome 81, Firefox 86, Safari 14.1), `getCountryName` returns the code.
+- **ES modules and CommonJS,** with TypeScript types for both. No build step, polyfills or configuration.
+- **Tree-shakeable** (`sideEffects: false`): bundlers keep only what you import.
 
 ## Versioning
 
-postalkit follows semver. Data changes are listed in [CHANGELOG.md](./CHANGELOG.md).
+postalkit follows semver. Data changes are listed separately in [CHANGELOG.md](./CHANGELOG.md), because they change which codes are accepted.
 
 - **0.x:** minor versions may change the API or the data; patch versions only fix bugs.
 - **From 1.0:** accepting a real code that used to be rejected is a fix (patch). Rejecting strings that were never real codes is a minor version, because someone may depend on the looser behavior. API changes are major.
 
-## Development
+## Contributing
 
-Needs Node 22.18 or later (`nvm use` picks up `.nvmrc`): scripts and tests are TypeScript, run directly by Node. The published package works on Node 14 and later, which CI checks by installing the packed tarball on Node 14 through 24. CI also runs it in Chromium, Firefox and WebKit, loaded as native ES modules and bundled by Vite and webpack, and checks that every combination behaves exactly like Node.
-
-```bash
-npm run check     # regenerate data, typecheck, build, test, size budgets, publint + attw
-npm run bench     # throughput, after a build
-npm run fetch     # refresh data/upstream.json from Google, then `npm run data`
-npm run corpus    # refresh data/corpus.json from GeoNames (needs `unzip`)
-npm run docs      # API reference into docs/ (TypeDoc, run with its own TypeScript 6)
-npm run test:browser   # browsers and bundlers; first: npx --prefix test/browser playwright install
-```
-
-To see the playground locally, build, serve the repository root (`python3 -m http.server`), and open `/playground/`.
+The most useful contribution is a real postal code that postalkit gets wrong: open a "Wrong result" issue. For setup, the data build and how to fix a country, see [CONTRIBUTING.md](./CONTRIBUTING.md).
 
 ## License
 
