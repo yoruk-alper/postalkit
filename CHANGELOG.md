@@ -2,7 +2,7 @@
 
 All notable changes to postalkit. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [semantic versioning](https://semver.org/) as described under "Versioning" in the README. Data changes are listed separately because they change which codes are accepted.
 
-## [0.2.0] - Unreleased
+## [0.2.0] - 2026-10-01
 
 First public release.
 
