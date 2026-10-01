@@ -1,15 +1,16 @@
 {
   "name": "postalkit",
   "version": "0.2.0",
-  "description": "Validate, format and guess postal codes for 252 countries. Forgiving input, one canonical output, a reason for every rejection. Zero dependencies, under 4 kB gzipped.",
+  "description": "Validate, format and guess postal codes for 252 countries. Forgiving input, one canonical output, a reason for every rejection. Zero dependencies, 4.1 kB gzipped.",
   "license": "MIT",
+  "author": "Alper (https://github.com/yoruk-alper)",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/OWNER/postalkit.git"
+    "url": "git+https://github.com/yoruk-alper/postalkit.git"
   },
-  "homepage": "https://github.com/OWNER/postalkit#readme",
+  "homepage": "https://github.com/yoruk-alper/postalkit#readme",
   "bugs": {
-    "url": "https://github.com/OWNER/postalkit/issues"
+    "url": "https://github.com/yoruk-alper/postalkit/issues"
   },
   "type": "module",
   "sideEffects": false,
@@ -120,5 +121,8 @@
     "postal-code-checker": "^2.3.0",
     "publint": "^0.3.24",
     "typescript": "^7.0.2"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

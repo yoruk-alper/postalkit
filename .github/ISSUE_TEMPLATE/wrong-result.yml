@@ -1,0 +1,38 @@
+name: Wrong result
+description: A postal code is accepted, rejected, formatted or guessed wrongly.
+labels: [data]
+body:
+  - type: input
+    id: country
+    attributes:
+      label: Country
+      placeholder: GB
+    validations:
+      required: true
+  - type: input
+    id: input
+    attributes:
+      label: Input
+      description: Exactly what was typed or passed in.
+      placeholder: '"SW1A1AA"'
+    validations:
+      required: true
+  - type: textarea
+    id: got
+    attributes:
+      label: What postalkit returned
+      placeholder: 'parse("GB", "SW1A1AA") → { valid: false, error: "invalid-format" }'
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What it should return, and a source
+      description: An official postal service page or a real address using the code helps most.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: postalkit version
+      placeholder: 0.2.0

@@ -37,7 +37,7 @@ getCountryInfo("US");
 //   example: "95014", numeric: true, maxLength: 10, inputMaxLength: 13 }
 ```
 
-[Try it in the playground](https://OWNER.github.io/postalkit/playground/) · [API reference](https://OWNER.github.io/postalkit/api/)
+[Try it in the playground](https://yoruk-alper.github.io/postalkit/playground/) · [API reference](https://yoruk-alper.github.io/postalkit/api/)
 
 ## Compared with postal-code-checker
 
