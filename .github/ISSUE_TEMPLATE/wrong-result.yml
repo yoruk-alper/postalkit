@@ -1,5 +1,5 @@
 name: Wrong result
-description: A postal code is accepted, rejected, formatted or guessed wrongly.
+description: A postal code is accepted, rejected or formatted wrongly.
 labels: [data]
 body:
   - type: input

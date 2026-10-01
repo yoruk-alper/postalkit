@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>postalkit playground</title>
-<meta name="description" content="Try postalkit: validate, format and guess postal codes for 252 countries, as you type.">
+<meta name="description" content="Try postalkit: validate and format postal codes for 252 countries, as you type.">
 <style>
   :root {
     --bg: #fafaf9; --surface: #ffffff; --text: #1c1917; --muted: #78716c; --border: #e7e5e4;
@@ -54,7 +54,7 @@
 <body>
 <main>
   <h1>postalkit</h1>
-  <p>Validate, format and guess postal codes for 252 countries. Type anything people actually type.</p>
+  <p>Validate and format postal codes for 252 countries. Type anything people actually type.</p>
 
   <section class="card">
     <div class="fields">
@@ -76,11 +76,6 @@
     <dl id="parse"></dl>
   </section>
 
-  <section class="card">
-    <h2>guessCountry(code)</h2>
-    <div class="chips" id="guess"></div>
-  </section>
-
   <section class="card" id="regions-card">
     <h2>findRegions(country, code) <span class="muted">· postalkit/regions</span></h2>
     <div id="regions"></div>
@@ -97,7 +92,7 @@
 </main>
 
 <script type="module">
-  import { getCountries, getCountryInfo, getCountryName, guessCountry, parse } from "../dist/index.js";
+  import { getCountries, getCountryInfo, getCountryName, parse } from "../dist/index.js";
   import { findRegions, hasRegionData } from "../dist/regions.js";
   import { checkPartial, parseTyped } from "../dist/partial.js";
   import { getErrorMessage } from "../dist/messages.js";
@@ -168,11 +163,6 @@
 
     const r = parse(c, v);
     rows($("parse"), Object.entries(r));
-
-    const guesses = v ? guessCountry(v).slice(0, 12) : [];
-    $("guess").replaceChildren(...(guesses.length
-      ? guesses.map((g) => chip(`${getCountryName(g)} (${g})`, () => { country.value = g; setCountry(); }))
-      : [Object.assign(document.createElement("span"), { className: "muted", textContent: v ? "No country uses this format." : "Type a code." })]));
 
     const regions = $("regions");
     if (!hasRegionData(c)) regions.innerHTML = `<span class="muted">No region data for this country (available for 23).</span>`;

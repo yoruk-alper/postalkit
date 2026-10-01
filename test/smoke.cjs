@@ -12,7 +12,6 @@ assert.strictEqual(core.format("ca", "k1a0t6"), "K1A 0T6");
 assert.strictEqual(core.format("JP", "１００－０００１"), "100-0001");
 assert.strictEqual(core.isValid("AE", ""), true);
 assert.deepStrictEqual(core.parse("DE", "1O115"), { valid: false, error: "invalid-chars", country: "DE" });
-assert.deepStrictEqual(core.guessCountry("K1A 0T6"), ["CA"]);
 assert.strictEqual(core.getCountries().length, 252);
 assert.strictEqual(core.getCountryInfo("US").label, "ZIP code");
 assert.strictEqual(typeof core.getCountryName("DE"), "string");

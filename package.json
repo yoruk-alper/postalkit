@@ -1,7 +1,7 @@
 {
   "name": "postalkit",
   "version": "0.2.0",
-  "description": "Validate, format and guess postal codes for 252 countries. Forgiving input, one canonical output, a reason for every rejection. Zero dependencies, 4.3 kB gzipped.",
+  "description": "Validate and format postal codes for 252 countries. Forgiving input, one canonical output, a reason for every rejection. Zero dependencies, 4.2 kB gzipped.",
   "license": "MIT",
   "author": "Alper (https://github.com/yoruk-alper)",
   "repository": {
@@ -95,8 +95,7 @@
     "test": "node --test \"test/*.test.ts\"",
     "corpus": "node scripts/fetch-corpus.ts",
     "docs": "npx -y -p typedoc@0.28 -p typescript@6.0 typedoc",
-    "size": "node scripts/size.ts --compare",
-    "compare": "node scripts/compare.ts",
+    "size": "node scripts/size.ts",
     "bench": "node scripts/bench.ts",
     "check": "npm run data && npm run build && npm run typecheck && npm test && npm run size && npm run lint:pkg",
     "prepublishOnly": "npm run check",
@@ -119,7 +118,6 @@
     "@arethetypeswrong/cli": "^0.18.5",
     "@types/node": "^26.6.3",
     "esbuild": "^0.28.2",
-    "postal-code-checker": "^2.3.0",
     "publint": "^0.3.24",
     "typescript": "^7.0.2"
   },

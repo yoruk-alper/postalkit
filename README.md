@@ -6,9 +6,9 @@
 [![types](https://img.shields.io/npm/types/postalkit)](https://www.npmjs.com/package/postalkit)
 [![license](https://img.shields.io/npm/l/postalkit)](./LICENSE)
 
-Validate, format and guess postal codes for **252 countries**. Accepts what people actually type, returns one canonical form to store, and tells you *why* a code was rejected.
+Validate and format postal codes for **252 countries**. Accepts what people actually type, returns one canonical form to store, and tells you *why* a code was rejected.
 
-- **Zero dependencies. 4.3 kB gzipped** for the whole API (3.7 kB if you only use `isValid`).
+- **Zero dependencies. 4.2 kB gzipped** for the whole API (3.7 kB if you only use `isValid`).
 - **Forgiving input, canonical output.** `"k1a-0t6"`, `"K1A0T6"` and `" k1a  0t6 "` all become `K1A 0T6`.
 - **Never throws.** `null`, numbers from spreadsheets, objects: you always get a result. A ZIP code a spreadsheet stored as `2134` gets its leading zero back: `02134`.
 - **Correct about when a code is needed.** An empty field is valid for the 70 countries without postal codes (the UAE, Hong Kong, ...) and the 108 where addresses don't require one (Argentina, Bulgaria, ...).
@@ -21,7 +21,7 @@ npm install postalkit
 ```
 
 ```ts
-import { parse, parseMany, isValid, format, guessCountry, getCountryInfo } from "postalkit";
+import { parse, isValid, format, getCountryInfo } from "postalkit";
 
 format("CA", "k1a0t6");          // "K1A 0T6"
 format("US", "902101234");       // "90210-1234"
@@ -34,14 +34,10 @@ isValid("AE", "");               // true         the UAE has no postal codes
 
 parse("DE", "1O115");            // { valid: false, error: "invalid-chars", country: "DE" }
 parse("GB", "SW1A");             // { valid: false, error: "too-short", country: "GB" }
-parseMany("US", csvColumn);      // one result per row, same order
-
-guessCountry("K1A 0T6");         // ["CA"]
-guessCountry("12345");           // ["US", "DE", "FR", "IT", "ES", ...]  most likely first
 
 getCountryInfo("US");
 // { code: "US", alpha3: "USA", hasPostalCode: true, required: true, label: "ZIP code",
-//   example: "95014", numeric: true, maxLength: 10, inputMaxLength: 16 }
+//   example: "95014", numeric: true, inputMaxLength: 16 }
 ```
 
 [Try it in the playground](https://yoruk-alper.github.io/postalkit/playground/) · [API reference](https://yoruk-alper.github.io/postalkit/api/)
@@ -54,28 +50,6 @@ getCountryInfo("US");
 - **Browsers:** current Chrome, Firefox and Safari, which CI tests (Chromium, Firefox and WebKit, unbundled and through Vite and webpack). Older browsers work from Chrome 64, Firefox 78 and Safari 11.1, the first with the Unicode regex features postalkit uses; those versions aren't tested. `getCountryName` returns the code itself where `Intl.DisplayNames` is missing (before Chrome 81, Firefox 86, Safari 14.1).
 - **ES modules and CommonJS**, with TypeScript types for both. No build step, polyfills or configuration needed.
 - **Tree-shakeable** (`sideEffects: false`): bundlers keep only what you import.
-
-## Compared with postal-code-checker
-
-Measured by `npm run size`, `npm run compare` and `npm run bench` in this repo (Node 24).
-
-|                                                    | postal-code-checker 2.3.0 | postalkit |
-| -------------------------------------------------- | ------------------------: | --------: |
-| Bundle, whole API (min + gzip)                     |                   21.0 kB |  **4.3 kB** |
-| Bundle, validation only (min + gzip)               |                    7.7 kB |  **3.7 kB** |
-| Install size (unpacked, all entry points)          |                    288 kB |  **137 kB** |
-| Real-world inputs accepted/rejected correctly      |                     10/22 |   **22/22** |
-| Real-world inputs returned in canonical form       |                      2/22 |   **22/22** |
-| Validate a UK postcode (ops/sec)                   |                      0.9M |  **7.4M** |
-| Validate a US ZIP (ops/sec)                        |                      5.4M |  **11.1M** |
-| Reject an invalid code (ops/sec)                   |                      6.8M |  **10.9M** |
-| Countries                                          |                       249 | **252** (adds Kosovo, Ascension, Tristan da Cunha) |
-| Says why a code is invalid                         |                        no |   **yes** |
-| State/province from a postal code (23 countries)   |       yes, always bundled |   **yes, opt-in** (`postalkit/regions`) |
-| Core + regions (min + gzip)                        |                   21.0 kB |  **14.4 kB** |
-| `validate(country, null)`                          |                    throws |   **returns a result** |
-| Validation while typing                            |                        no |   **yes, opt-in** (`postalkit/partial`) |
-| Tested against real postal codes                   |                        no |   **22,484 codes, 121 countries** |
 
 ## API
 
@@ -99,14 +73,12 @@ type ParseResult =
 | `too-long`        | Too long for any code in this country                             |
 | `invalid-format`  | Right length and characters, but not a code this country issues   |
 
-### `parseMany(country, codes): ParseResult[]`
+Codes that a spreadsheet turned into numbers are handled: in digits-only countries, leading zeros it dropped are restored (`parse("US", 2134)` gives `02134`, `parse("IT", 100)` gives `00100`). Only whole numbers can be codes; `9021.5` and `-90210` are `invalid-chars`.
 
-`parse` for a whole column (a CSV import, a bulk upload): one result per input, in the same order, each with the canonical value or the reason it failed. A bad cell never stops the batch.
-
-Cells that a spreadsheet turned into numbers are handled: in digits-only countries, leading zeros it dropped are restored (`2134` is `02134` in the US, `100` is `00100` in Italy). Only whole numbers can be codes; `9021.5` and `-90210` are `invalid-chars`.
+For a whole column (a CSV import, a bulk upload), map over it:
 
 ```ts
-const results = parseMany("US", rows.map((r) => r.zip));
+const results = rows.map((r) => parse("US", r.zip));
 const bad = rows.filter((_, i) => !results[i].valid);
 ```
 
@@ -117,10 +89,6 @@ const bad = rows.filter((_, i) => !results[i].valid);
 ### `format(country, code): string | null`
 
 The canonical form to store and display, or `null` if invalid. Idempotent: `format(c, format(c, x)) === format(c, x)`.
-
-### `guessCountry(code): CountryCode[]`
-
-Every country whose format accepts the code, most likely first. Ranking combines how specific each country's format is with how common the country is. A country prefix in the input (`"SE-114 55"`) puts that country first.
 
 ### `getCountryInfo(country): CountryInfo | null`
 
@@ -133,12 +101,11 @@ interface CountryInfo {
   label: "postal code" | "ZIP code" | "PIN code" | "Eircode" | "postcode";
   example: string;        // canonical, for a placeholder
   numeric: boolean;       // digits only: inputmode="numeric" is safe
-  maxLength: number;      // longest canonical code
   inputMaxLength: number; // a safe maxlength for the input, with room for "SWE-" or "D - "
 }
 ```
 
-Use `inputMaxLength`, not `maxLength`, as the input's `maxlength`: people type country prefixes (`"SWE - 114 55"` is 12 characters, the canonical `"114 55"` is 6), and the prefix is removed for you.
+`inputMaxLength` is longer than the longest canonical code on purpose: people type country prefixes (`"SWE - 114 55"` is 12 characters, the canonical `"114 55"` is 6), and the prefix is removed for you.
 
 `numeric` already accounts for separators and fixed prefixes, which are added for you. A phone keypad without a hyphen still works for US ZIP+4 (`902101234` becomes `90210-1234`) and Latvia (`1050` becomes `LV-1050`).
 
@@ -228,10 +195,7 @@ Territories with their own ISO 3166 code are countries of their own here, as in 
 ```ts
 parse("PR", "00901").valid;   // true
 parse("US", "00901").valid;   // true
-guessCountry("00901");        // ["PR", "US", ...]  the territory first
 ```
-
-Store the country the user picked rather than one derived from the code.
 
 ## What "forgiving" means exactly
 
@@ -368,7 +332,6 @@ CI checks Google's data weekly ([`upstream.yml`](./.github/workflows/upstream.ym
 
 - **Format, not existence.** `SW1A 9ZZ` has a valid format, but whether it is anyone's postcode takes an address-verification service.
 - **As good as the data.** Patterns follow Google's libaddressinput, plus the corrections in [`scripts/overrides.ts`](./scripts/overrides.ts). Where Google says a country has no postal codes (UAE, Hong Kong, Panama, ...), postalkit does too.
-- **Same pattern, same answer.** Guadeloupe, Saint-Martin and Saint-Barthélemy share one format, so `guessCountry("97133")` can't tell that the code is Saint-Barthélemy's and puts the most populous first.
 - **Regions** cover 23 countries and work by code prefix, so a code near a border can return two regions.
 - **CEDEX.** `"75008 CEDEX"` is rejected (`invalid-chars`): the CEDEX part belongs on the city line (`75008 PARIS CEDEX 08`), the postal code is `75008`.
 
@@ -385,7 +348,6 @@ Needs Node 22.18 or later (`nvm use` picks up `.nvmrc`): scripts and tests are T
 
 ```bash
 npm run check     # regenerate data, typecheck, build, test, size budgets, publint + attw
-npm run compare   # head-to-head with postal-code-checker
 npm run bench     # throughput, after a build
 npm run fetch     # refresh data/upstream.json from Google, then `npm run data`
 npm run corpus    # refresh data/corpus.json from GeoNames (needs `unzip`)

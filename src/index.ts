@@ -51,8 +51,6 @@ export interface CountryInfo {
   example: string;
   /** Digits only, so `inputmode="numeric"` is safe. Separators and fixed prefixes are added for you. */
   numeric: boolean;
-  /** Length of the longest canonical code. */
-  maxLength: number;
   /** A safe `maxlength` for the input: room for a typed country prefix and separator ("SE - 114 55"). */
   inputMaxLength: number;
 }
@@ -149,7 +147,7 @@ function test(r: Rule, s: string): string | null {
 }
 
 /** Match, tolerating a country prefix in front ("SE-114 55", "D-10115") and a missing fixed one ("1050" in LV). */
-function attempt(r: Rule, s: string, restore: boolean): [candidate: string, value: string | null] {
+function attempt(r: Rule, s: string): [candidate: string, value: string | null] {
   let out = test(r, s);
   if (out === null) {
     for (const p of r.st) {
@@ -159,7 +157,7 @@ function attempt(r: Rule, s: string, restore: boolean): [candidate: string, valu
         break;
       }
     }
-    if (out === null && restore && r.pre && !s.startsWith(r.pre)) out = test(r, (s = r.pre + s));
+    if (out === null && r.pre && !s.startsWith(r.pre)) out = test(r, (s = r.pre + s));
   }
   return [s, out];
 }
@@ -171,9 +169,9 @@ function run(country: unknown, code: unknown): [Rule | undefined, string, string
   if (!r) return [r, s, s, null];
   if (!r.r.length) return [r, s, s, s ? null : ""];
   if (!s) return [r, s, s, r.fl.includes("R") ? null : ""]; // empty is fine where a code is optional
-  let [t, value] = attempt(r, s, true);
+  let [t, value] = attempt(r, s);
   // Spreadsheets store codes as numbers and drop their leading zeros: 2134 was "02134". A 0 is a blank cell.
-  for (let z = s; value === null && typeof code == "number" && code > 0 && r.fl.includes("N") && z.length < r.mx; ) value = attempt(r, (z = "0" + z), true)[1];
+  for (let z = s; value === null && typeof code == "number" && code > 0 && r.fl.includes("N") && z.length < r.mx; ) value = attempt(r, (z = "0" + z))[1];
   return [r, s, t, value];
 }
 
@@ -200,17 +198,6 @@ export function parse(country: CountryInput, code: unknown): ParseResult {
 }
 
 /**
- * `parse` for many codes of one country, e.g. a CSV column. One result per input, same order.
- * A single string counts as one code.
- *
- * @example parseMany("US", ["90210", "", "9021"]).filter((r) => !r.valid)
- */
-export function parseMany(country: CountryInput, codes: Iterable<unknown>): ParseResult[] {
-  // A string is iterable too, but "90210" is one code, not five.
-  return Array.from(typeof codes === "string" ? [codes] : codes || [], (code) => parse(country, code));
-}
-
-/**
  * Whether `code` is acceptable as the postal code for `country`.
  * An empty value is valid where a postal code isn't required (see `CountryInfo.required`).
  */
@@ -221,25 +208,6 @@ export function isValid(country: CountryInput, code: unknown): boolean {
 /** The canonical form to store and display ("k1a0t6" → "K1A 0T6"), or null if invalid. */
 export function format(country: CountryInput, code: unknown): string | null {
   return run(country, code)[3];
-}
-
-/**
- * Countries whose format accepts `code`, most likely first. A country prefix in
- * the input counts as evidence: "SE-114 55" puts Sweden first.
- */
-export function guessCountry(code: unknown): CountryCode[] {
-  const s = clean(code);
-  const prefixed: CountryCode[] = [];
-  const rest: CountryCode[] = [];
-  const t = load();
-  if (s) {
-    for (const c in t) {
-      if (!t[c]) continue;
-      const [stripped, value] = attempt(rule(c)!, s, false);
-      if (value !== null) (stripped.length < s.length ? prefixed : rest).push(c as CountryCode);
-    }
-  }
-  return prefixed.concat(rest);
 }
 
 /** What a form needs to know about a country's postal codes, or null for an unknown country. */
@@ -256,7 +224,6 @@ export function getCountryInfo(country: CountryInput): CountryInfo | null {
     label: LABELS[fl[0]] || "postal code",
     example: r.ex,
     numeric: fl.includes("N"),
-    maxLength: max,
     // Longest typed prefix (r.st is sorted longest first) plus a separator after it, up to " - ".
     inputMaxLength: max && max + r.st[0].length + 3,
   };

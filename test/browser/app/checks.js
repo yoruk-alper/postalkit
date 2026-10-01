@@ -20,7 +20,6 @@ export function run({ core, regions, partial, messages }) {
   eq("fixed prefix restored", core.format("LV", "1050"), "LV-1050");
   eq("no postal codes", core.isValid("AE", ""), true);
   eq("reason", core.parse("DE", "1O115"), { valid: false, error: "invalid-chars", country: "DE" });
-  eq("guessCountry", core.guessCountry("K1A 0T6"), ["CA"]);
   eq("getCountries", core.getCountries().length, 252);
   eq("getCountryName", core.getCountryName("DE", "de"), "Deutschland");
   eq("inputMaxLength", core.getCountryInfo("SE").inputMaxLength, 12);
@@ -45,7 +44,7 @@ export function run({ core, regions, partial, messages }) {
 
 /**
  * A hash of how every country handles a set of inputs (parse, checkPartial, findRegions,
- * getCountryInfo, guessCountry). Must be identical in every engine; differences point at
+ * getCountryInfo). Must be identical in every engine; differences point at
  * regex or Unicode behavior that varies between JavaScript engines.
  */
 export function fingerprint({ core, regions, partial }) {
@@ -56,7 +55,7 @@ export function fingerprint({ core, regions, partial }) {
     const ex = info.example;
     const persian = (s) => s.replace(/\d/g, (d) => String.fromCharCode(0x6f0 + +d));
     const inputs = ["", ex, ex.toLowerCase(), ex.replace(/[ -]/g, ""), `${c}-${ex}`, fullWidth(ex), persian(ex), ex.slice(0, 2), ex + "9", ex.replace(/\d/, "O")];
-    out.push(JSON.stringify(info), JSON.stringify(core.guessCountry(ex)));
+    out.push(JSON.stringify(info));
     for (const x of inputs) out.push(JSON.stringify([core.parse(c, x), partial.parseTyped(c, x), partial.checkPartial(c, x), regions.findRegions(c, x)]));
   }
   // FNV-1a, 32-bit

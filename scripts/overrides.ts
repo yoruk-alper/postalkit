@@ -6,7 +6,7 @@
  *  the 5th character, "-3 " inserts " " before the last 3. "" means no separator. */
 export type Alt = [pattern: string, format: string];
 
-export interface Override {
+interface Override {
   why: string;
   /** Replace the derived alternatives. Receives the compacted upstream pattern. */
   alts?: (compact: string) => Alt[];
@@ -90,13 +90,3 @@ export const EXTRA_PREFIXES: Record<string, string[]> = {
   DE: ["D"], FR: ["F"], AT: ["A"], IT: ["I"], BE: ["B"], LU: ["L"], NO: ["N"],
   SE: ["S"], PT: ["P"], ES: ["E"], HU: ["H"], LI: ["FL"], OM: ["PC"],
 };
-
-/** Tie-breaker for guessCountry() among equally specific patterns (most likely first). */
-export const POPULARITY = [
-  "US", "GB", "DE", "FR", "IN", "JP", "CA", "AU", "BR", "CN", "IT", "ES", "MX", "NL", "KR",
-  "RU", "TR", "PL", "SE", "CH", "BE", "AT", "ID", "SA", "AR", "ZA", "TH", "PH", "MY", "SG",
-  "NO", "DK", "FI", "IE", "PT", "CZ", "RO", "GR", "HU", "IL", "UA", "NZ", "CO", "CL", "PE",
-  "VN", "PK", "BD", "EG", "NG", "KE", "MA", "DZ", "TW", "KZ",
-  // Same pattern as Saint-Barthélemy, many times the population.
-  "GP", "MF",
-];

@@ -66,7 +66,7 @@ test("every country's placeholder example is valid and already canonical", () =>
       continue;
     }
     assert.equal(format(cc, info.example), info.example, cc);
-    assert.ok(info.example.length <= info.maxLength, `${cc}: example longer than maxLength`);
+    assert.ok(info.example.length <= info.inputMaxLength, `${cc}: example longer than inputMaxLength`);
     if (info.numeric) assert.ok(parse(cc, info.example.replace(/[^0-9]/g, "")).valid, `${cc}: digits-only entry fails`);
   }
 });

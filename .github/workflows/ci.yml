@@ -27,7 +27,6 @@ jobs:
       - run: npm run check
       - name: Generated files are committed
         run: git diff --exit-code
-      - run: npm run compare
       - run: npm pack
       - uses: actions/upload-artifact@v7
         with:

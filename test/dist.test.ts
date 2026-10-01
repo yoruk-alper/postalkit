@@ -11,7 +11,7 @@ test("ESM and CommonJS builds behave the same", { skip: !built && "run npm run b
   const cjs = createRequire(import.meta.url)("../dist/index.cjs");
   for (const api of [esm, cjs]) {
     assert.equal(api.format("ca", "k1a0t6"), "K1A 0T6");
-    assert.deepEqual(api.guessCountry("K1A 0T6"), ["CA"]);
+    assert.equal(api.getCountryInfo("US").label, "ZIP code");
   }
   assert.deepEqual(Object.keys(esm).sort(), Object.keys(cjs).sort());
 });

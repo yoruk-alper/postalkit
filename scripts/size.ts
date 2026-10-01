@@ -1,5 +1,5 @@
 // Measures what an app actually ships: the package bundled and minified, then compressed.
-// Fails if postalkit grows past its budget. `--compare` also measures postal-code-checker.
+// Fails if postalkit grows past its budget.
 import { brotliCompressSync, gzipSync } from "node:zlib";
 import { build } from "esbuild";
 
@@ -38,10 +38,6 @@ for (const [entry, budget] of Object.entries(EXTRA_BUDGETS_GZIP)) {
   if (extra.gzip > budget) over.push(`postalkit/${entry}: ${fmt(extra.gzip)} gzip > ${fmt(budget)}`);
 }
 
-if (process.argv.includes("--compare")) {
-  row("postal-code-checker (everything)", await measure(`export * from "postal-code-checker";`));
-  row("postal-code-checker { validatePostalCode }", await measure(`import { validatePostalCode } from "postal-code-checker"; console.log(validatePostalCode);`));
-}
 
 if (full.gzip > BUDGET_GZIP) over.push(`postalkit: ${fmt(full.gzip)} gzip > ${fmt(BUDGET_GZIP)}`);
 if (over.length) {

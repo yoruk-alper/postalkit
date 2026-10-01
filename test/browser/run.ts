@@ -71,7 +71,7 @@ await pack("entry.cjs", "webpack-cjs");
 
 // 4. Tree shaking: isValid alone must not pull in the rest of the API.
 const shaken = await pack("treeshake.js", "treeshake");
-const leaked = ["DisplayNames", "guessCountry", "parseMany"].filter((s) => shaken.includes(s));
+const leaked = ["DisplayNames", "inputMaxLength"].filter((s) => shaken.includes(s));
 const problems: string[] = leaked.length ? [`treeshake: an isValid-only bundle contains ${leaked.join(", ")}`] : [];
 console.log(`webpack bundle of isValid alone: ${(shaken.length / 1024).toFixed(1)} kB minified`);
 

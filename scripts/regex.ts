@@ -113,34 +113,6 @@ export function lengths(n: Node): [number, number] {
   }
 }
 
-/** How many strings of each length the pattern matches (index = length, upper bound under alternation). */
-export function countsByLength(n: Node): number[] {
-  switch (n.t) {
-    case "set":
-      return [0, n.size];
-    case "seq":
-      return n.items.reduce((acc, it) => convolve(acc, countsByLength(it)), [1]);
-    case "alt":
-      return n.items.map(countsByLength).reduce((a, b) => a.map((x, i) => x + (b[i] ?? 0)).concat(b.slice(a.length)));
-    case "rep": {
-      const one = countsByLength(n.node);
-      let power: number[] = [1];
-      let total: number[] = [];
-      for (let k = 0; k <= Math.min(n.max, 40); k++) {
-        if (k >= n.min) total = total.map((x, i) => x + (power[i] ?? 0)).concat(power.slice(total.length));
-        power = convolve(power, one);
-      }
-      return total;
-    }
-  }
-}
-
-function convolve(a: number[], b: number[]): number[] {
-  const out = new Array<number>(Math.min(a.length + b.length - 1, 41)).fill(0);
-  a.forEach((x, i) => b.forEach((y, j) => i + j < out.length && (out[i + j] += x * y)));
-  return out;
-}
-
 /** Whether any matched string can contain a letter. */
 export function hasLetters(n: Node): boolean {
   switch (n.t) {

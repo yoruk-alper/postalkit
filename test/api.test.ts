@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { format, getCountries, getCountryInfo, getCountryName, guessCountry, isValid, parse, parseMany } from "../src/index.ts";
+import { format, getCountries, getCountryInfo, getCountryName, isValid, parse } from "../src/index.ts";
 
 test("formats to one canonical form", () => {
   const cases: [string, string, string][] = [
@@ -136,7 +136,6 @@ test("never throws, whatever it is given", () => {
   for (const c of junk.concat("US", "AE", "GB")) {
     for (const v of junk) {
       assert.doesNotThrow(() => parse(c as string, v));
-      assert.doesNotThrow(() => guessCountry(v));
       assert.doesNotThrow(() => getCountryInfo(c as string));
       assert.doesNotThrow(() => getCountryName(c as string));
     }
@@ -166,15 +165,6 @@ test("restores the leading zeros a spreadsheet dropped", () => {
   assert.equal(parse("US", 1234567890).valid, false); // too long to pad
 });
 
-test("parses many codes at once, one result per input", () => {
-  const results = parseMany("us", ["90210", "", null, "9021", "902101234"]);
-  assert.deepEqual(results.map((r) => (r.valid ? r.value : r.error)), ["90210", "empty", "empty", "too-short", "90210-1234"]);
-  assert.equal(parseMany("XX", ["1"])[0].valid, false);
-  assert.deepEqual(parseMany("US", new Set(["10001"])).map((r) => r.valid), [true]);
-  assert.deepEqual(parseMany("US", null as never), []);
-  assert.deepEqual(parseMany("US", "90210").map((r) => r.valid), [true]); // one code, not five characters
-});
-
 test("Eircodes: real format only", () => {
   assert.equal(format("IE", "d02x285"), "D02 X285");
   assert.equal(format("IE", "D6W1234"), "D6W 1234");
@@ -183,20 +173,10 @@ test("Eircodes: real format only", () => {
   assert.equal(format("IE", "A65 F4B2"), null); // B never appears in the identifier
 });
 
-test("guesses the country, most likely first", () => {
-  assert.deepEqual(guessCountry("K1A 0T6"), ["CA"]);
-  assert.deepEqual(guessCountry("12345").slice(0, 3), ["US", "DE", "FR"]);
-  assert.equal(guessCountry("SE-114 55")[0], "SE");
-  assert.equal(guessCountry("00120")[0], "VA");
-  assert.ok(guessCountry("SW1A 1AA").includes("GB"));
-  assert.deepEqual(guessCountry(""), []);
-  assert.deepEqual(guessCountry("!!!"), []);
-});
-
 test("describes a country for forms", () => {
   assert.deepEqual(getCountryInfo("us"), {
     code: "US", alpha3: "USA", hasPostalCode: true, required: true, label: "ZIP code",
-    example: "95014", numeric: true, maxLength: 10, inputMaxLength: 16,
+    example: "95014", numeric: true, inputMaxLength: 16,
   });
   assert.equal(getCountryInfo("IN")!.label, "PIN code");
   assert.equal(getCountryInfo("IE")!.label, "Eircode");
@@ -216,7 +196,6 @@ test("inputMaxLength leaves room for a typed country prefix", () => {
   }
   for (const c of getCountries()) {
     const info = getCountryInfo(c)!;
-    assert.ok(info.inputMaxLength >= info.maxLength, c);
     if (info.hasPostalCode) assert.ok(`${info.alpha3} - ${info.example}`.length <= info.inputMaxLength, c);
   }
 });
@@ -247,12 +226,5 @@ test("territories: codes valid under the territory and the parent's system", () 
   for (const [territory, parent, code] of cases) {
     assert.equal(format(territory, code), code, `${territory} ${code}`);
     assert.equal(format(parent, code), code, `${parent} ${code}`);
-    assert.ok(guessCountry(code).includes(territory as never), `guessCountry("${code}") misses ${territory}`);
   }
-  // A territory-specific range or prefix puts the territory first.
-  assert.equal(guessCountry("00901")[0], "PR");
-  assert.equal(guessCountry("96910")[0], "GU");
-  assert.equal(guessCountry("AX-22100")[0], "AX");
-  // Guadeloupe, Saint-Martin and Saint-Barthélemy share one pattern: the most populous comes first.
-  assert.deepEqual(guessCountry("97100").slice(0, 3), ["GP", "MF", "BL"]);
 });

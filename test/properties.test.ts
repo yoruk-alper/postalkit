@@ -2,7 +2,7 @@
 // realistic codes, near misses, and junk.
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { format, getCountries, getCountryInfo, guessCountry, isValid, parse, parseMany } from "../src/index.ts";
+import { format, getCountries, getCountryInfo, isValid, parse } from "../src/index.ts";
 import { mutate, prng } from "../scripts/regex.ts";
 
 const JUNK = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcxyz -.–—〒ー１２３ＡＢ\t /#é";
@@ -39,23 +39,7 @@ test("format is idempotent and its output is already canonical", () => {
       const out = format(cc, x);
       if (out === null) continue;
       assert.equal(format(cc, out), out, `${cc}: ${JSON.stringify(x)} -> ${JSON.stringify(out)}`);
-      assert.ok(out.length <= getCountryInfo(cc)!.maxLength, `${cc}: "${out}" longer than maxLength`);
-    }
-  }
-});
-
-test("parseMany is parse for each input, in order", () => {
-  for (const cc of getCountries()) {
-    const xs = inputs(cc);
-    assert.deepEqual(parseMany(cc, xs), xs.map((x) => parse(cc, x)), cc);
-  }
-});
-
-test("guessCountry finds the country of every canonical code", () => {
-  for (const cc of getCountries()) {
-    for (const x of inputs(cc)) {
-      if (!x || format(cc, x) !== x) continue;
-      assert.ok(guessCountry(x).includes(cc as never), `${cc}: guessCountry("${x}") misses it`);
+      assert.ok(out.length <= getCountryInfo(cc)!.inputMaxLength, `${cc}: "${out}" longer than inputMaxLength`);
     }
   }
 });
