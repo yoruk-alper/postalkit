@@ -1,0 +1,263 @@
+import { ALPHA3, NONE, RULES, type CountryCode } from "./data.ts";
+
+export type { CountryCode };
+
+/** Alpha-2 ("US"), alpha-3 ("USA"), any case. Unknown strings are accepted and reported as "unknown-country". */
+export type CountryInput = CountryCode | Lowercase<CountryCode> | (string & {});
+
+export type ParseError =
+  | "empty" // nothing to check, but the country uses postal codes
+  | "unknown-country"
+  | "not-applicable" // the country has no postal codes, yet something was entered
+  | "invalid-chars"
+  | "too-short"
+  | "too-long"
+  | "invalid-format";
+
+export type ParseResult =
+  | { valid: true; value: string; country: CountryCode }
+  | { valid: false; error: ParseError; country: CountryCode | null };
+
+export interface CountryInfo {
+  code: CountryCode;
+  alpha3: string;
+  /** False for the ~70 countries without postal codes: hide the field. */
+  hasPostalCode: boolean;
+  /** Whether addresses in this country need a postal code. */
+  required: boolean;
+  /** What the country calls it, for a field label. */
+  label: "postal code" | "ZIP code" | "PIN code" | "Eircode" | "postcode";
+  /** A canonical example, for a placeholder. Empty when there are no postal codes. */
+  example: string;
+  /** Digits only, so `inputmode="numeric"` is safe. Separators and fixed prefixes are added for you. */
+  numeric: boolean;
+  /** Length of the longest canonical code. */
+  maxLength: number;
+}
+
+interface Rule {
+  c: CountryCode;
+  r: RegExp[]; // one per alternative; empty = no postal codes
+  at: number[]; // per alternative: where the separator goes (negative = from the end, 0 = none)
+  sep: string[];
+  mn: number;
+  mx: number;
+  ex: string;
+  fl: string;
+  st: string[]; // prefixes people write in front of the code, longest first
+  pre: string; // fixed prefix that may be omitted ("LV" in "LV-1050")
+}
+
+const ALIASES: { [code: string]: CountryCode } = { UK: "GB", EL: "GR" };
+const LABELS: { [flag: string]: CountryInfo["label"] } = { z: "ZIP code", p: "PIN code", e: "Eircode", c: "postcode" };
+// Spaces, dots, hyphens and dashes (U+2010-U+2015), minus (U+2212), "ー" (U+30FC, typed as a dash in Japanese), "〒".
+const SEPARATORS = /[\s.\-_‐-―−ー〒]/g;
+// Rules by country argument as given ("US", "usa", ...). Only short keys are kept, so it stays bounded.
+const memo = new Map<string, Rule>();
+let table: { [code: string]: string } | undefined; // code -> packed entry, "" without postal codes
+let all: CountryCode[];
+let byAlpha3: { [alpha3: string]: CountryCode };
+let alpha3Of: { [code: string]: string };
+
+/** Unpack the data once, on first use. */
+function load(): { [code: string]: string } {
+  if (!table) {
+    table = {};
+    for (const e of RULES.split(";")) table[e.slice(0, 2)] = e.slice(2);
+    for (let i = 0; i < NONE.length; i += 2) table[NONE.substr(i, 2)] = "";
+    all = Object.keys(table).sort() as CountryCode[];
+    byAlpha3 = {};
+    alpha3Of = {};
+    let j = 0;
+    for (const c of all) {
+      const short = ALPHA3[j] > "Z";
+      const a3 = short ? c + ALPHA3[j].toUpperCase() : ALPHA3.substr(j, 3);
+      j += short ? 1 : 3;
+      byAlpha3[a3] = c;
+      alpha3Of[c] = a3;
+    }
+  }
+  return table;
+}
+
+function resolve(country: unknown): CountryCode | undefined {
+  if (typeof country !== "string") return;
+  const t = load();
+  const up = country.trim().toUpperCase();
+  const c = up.length === 3 ? byAlpha3[up] : ALIASES[up] || up;
+  // Keys are uppercase, so `in` cannot hit Object.prototype members.
+  return c in t ? (c as CountryCode) : undefined;
+}
+
+function rule(country: unknown): Rule | undefined {
+  let r = typeof country === "string" ? memo.get(country) : undefined;
+  if (r) return r;
+  const c = resolve(country);
+  if (!c) return;
+  r = memo.get(c);
+  if (!r) {
+    // Field layout and the derived defaults are documented in scripts/build-data.ts.
+    const [p = "", fl = "", f = "", st = "", len = "", ex = ""] = table![c].split("~");
+    const fs = f.split("!");
+    const n = len ? parseInt(len[0], 36) : ex.replace(/[ -]/g, "").length;
+    memo.set(c, (r = {
+      c,
+      r: p ? p.replace(/#/g, "\\d").split("!").map((x) => new RegExp("^(?:" + x + ")$")) : [],
+      at: fs.map((x) => parseInt(x, 10) || 0),
+      sep: fs.map((x) => x.slice(-1)),
+      mn: n,
+      mx: len ? parseInt(len[1], 36) : n,
+      ex,
+      fl,
+      st: (st ? st.split("!") : []).concat(c).sort((a, b) => b.length - a.length),
+      pre: fl.includes("N") ? (/^[A-Z]+/.exec(p) || [""])[0] : "",
+    }));
+  }
+  if ((country as string).length < 4) memo.set(country as string, r);
+  return r;
+}
+
+/** Uppercase, fold full-width characters, drop every separator. */
+function clean(input: unknown): string {
+  // Whole numbers only: 9021.5 must not become "90215" once the dot is dropped.
+  let s = typeof input === "string" ? input : Number.isInteger(input) && (input as number) >= 0 ? "" + input : "";
+  if (/[^\x20-\x7e]/.test(s) && s.normalize) s = s.normalize("NFKC");
+  return s.toUpperCase().replace(SEPARATORS, "");
+}
+
+/** Canonical form of `s` if it matches, else null. */
+function test(r: Rule, s: string): string | null {
+  for (let i = 0; i < r.r.length; i++) {
+    if (r.r[i].test(s)) {
+      const at = r.at[i] < 0 ? s.length + r.at[i] : r.at[i];
+      return at > 0 && at < s.length ? s.slice(0, at) + r.sep[i] + s.slice(at) : s;
+    }
+  }
+  return null;
+}
+
+/** Match, tolerating a country prefix in front ("SE-114 55", "D-10115") and a missing fixed one ("1050" in LV). */
+function attempt(r: Rule, s: string, restore: boolean): [candidate: string, value: string | null] {
+  let out = test(r, s);
+  if (out === null) {
+    for (const p of r.st) {
+      if (p !== r.pre && s.length > p.length && s.startsWith(p)) {
+        s = s.slice(p.length);
+        out = test(r, s);
+        break;
+      }
+    }
+    if (out === null && restore && r.pre && !s.startsWith(r.pre)) out = test(r, (s = r.pre + s));
+  }
+  return [s, out];
+}
+
+/** [rule, cleaned input, last candidate tried, canonical value or null]. */
+function run(country: unknown, code: unknown): [Rule | undefined, string, string, string | null] {
+  const r = rule(country);
+  const s = clean(code);
+  if (!r) return [r, s, s, null];
+  if (!r.r.length) return [r, s, s, s ? null : ""];
+  if (!s) return [r, s, s, null];
+  const [t, value] = attempt(r, s, true);
+  return [r, s, t, value];
+}
+
+/**
+ * Check a postal code and get its canonical form, or the reason it was rejected.
+ * Never throws: any input (null, numbers, objects) yields a result.
+ *
+ * @example parse("ca", "k1a-0t6") // { valid: true, value: "K1A 0T6", country: "CA" }
+ * @example parse("GB", "SW1A")    // { valid: false, error: "too-short", country: "GB" }
+ * @example parse("AE", "")        // { valid: true, value: "", country: "AE" } (no postal codes in the UAE)
+ */
+export function parse(country: CountryInput, code: unknown): ParseResult {
+  const [r, s, t, value] = run(country, code);
+  if (!r) return { valid: false, error: "unknown-country", country: null };
+  if (value !== null) return { valid: true, value, country: r.c };
+  const error: ParseError =
+    !r.r.length ? "not-applicable"
+    : !s ? "empty"
+    : /[^A-Z0-9]/.test(t) || (r.fl.includes("N") && /[A-Z]/.test(t.slice(r.pre.length))) ? "invalid-chars"
+    : t.length < r.mn ? "too-short"
+    : t.length > r.mx ? "too-long"
+    : "invalid-format";
+  return { valid: false, error, country: r.c };
+}
+
+/**
+ * `parse` for many codes of one country, e.g. a CSV column. One result per input, same order.
+ *
+ * @example parseMany("US", ["90210", "", "9021"]).filter((r) => !r.valid)
+ */
+export function parseMany(country: CountryInput, codes: Iterable<unknown>): ParseResult[] {
+  return Array.from(codes || [], (code) => parse(country, code));
+}
+
+/**
+ * Whether `code` is acceptable as the postal code for `country`.
+ * An empty value is valid for countries without postal codes.
+ */
+export function isValid(country: CountryInput, code: unknown): boolean {
+  return run(country, code)[3] !== null;
+}
+
+/** The canonical form to store and display ("k1a0t6" → "K1A 0T6"), or null if invalid. */
+export function format(country: CountryInput, code: unknown): string | null {
+  return run(country, code)[3];
+}
+
+/**
+ * Countries whose format accepts `code`, most likely first. A country prefix in
+ * the input counts as evidence: "SE-114 55" puts Sweden first.
+ */
+export function guessCountry(code: unknown): CountryCode[] {
+  const s = clean(code);
+  const prefixed: CountryCode[] = [];
+  const rest: CountryCode[] = [];
+  const t = load();
+  if (s) {
+    for (const c in t) {
+      if (!t[c]) continue;
+      const [stripped, value] = attempt(rule(c)!, s, false);
+      if (value !== null) (stripped.length < s.length ? prefixed : rest).push(c as CountryCode);
+    }
+  }
+  return prefixed.concat(rest);
+}
+
+/** What a form needs to know about a country's postal codes, or null for an unknown country. */
+export function getCountryInfo(country: CountryInput): CountryInfo | null {
+  const r = rule(country);
+  if (!r) return null;
+  const fl = r.fl;
+  return {
+    code: r.c,
+    alpha3: alpha3Of[r.c],
+    hasPostalCode: r.r.length > 0,
+    required: fl.includes("R"),
+    label: LABELS[fl[0]] || "postal code",
+    example: r.ex,
+    numeric: fl.includes("N"),
+    maxLength: r.r.length ? r.mx + (r.at.some(Boolean) ? 1 : 0) : 0,
+  };
+}
+
+/** Every supported country code (252, including XK Kosovo), alphabetically. */
+export function getCountries(): CountryCode[] {
+  load();
+  return all.slice();
+}
+
+const names: { [locale: string]: { of(code: string): string | undefined } } = {};
+
+/** Localized country name via the built-in Intl API (no bundled names). Falls back to the code. */
+export function getCountryName(country: CountryInput, locale = "en"): string {
+  const c = resolve(country);
+  if (!c) return "";
+  try {
+    return (names[locale] ||= new Intl.DisplayNames([locale], { type: "region" })).of(c) || c;
+  } catch {
+    return c;
+  }
+}

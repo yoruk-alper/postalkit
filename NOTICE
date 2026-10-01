@@ -1,0 +1,12 @@
+postalkit
+
+This package includes postal code data derived from Google's libaddressinput
+address data (https://github.com/google/libaddressinput), retrieved from
+https://chromium-i18n.appspot.com/ssl-address/data and licensed under the
+Creative Commons Attribution 4.0 International license (CC-BY 4.0,
+https://creativecommons.org/licenses/by/4.0/).
+
+Changes: patterns were rewritten into a compact, separator-free form,
+optimized, and corrected where noted in scripts/overrides.ts; canonical
+formats, labels and prefixes were derived or added. No libaddressinput source
+code is included.

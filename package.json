@@ -1,0 +1,71 @@
+{
+  "name": "postalkit",
+  "version": "0.1.0",
+  "description": "Validate, format and guess postal codes for 252 countries. Forgiving input, one canonical output, a reason for every rejection. Zero dependencies, under 4 kB gzipped.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./regions": {
+      "import": {
+        "types": "./dist/regions.d.ts",
+        "default": "./dist/regions.js"
+      },
+      "require": {
+        "types": "./dist/regions.d.cts",
+        "default": "./dist/regions.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "NOTICE"
+  ],
+  "engines": {
+    "node": ">=14"
+  },
+  "scripts": {
+    "fetch": "node scripts/fetch.ts",
+    "data": "node scripts/build-data.ts",
+    "build": "node scripts/build.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test \"test/*.test.ts\"",
+    "size": "node scripts/size.ts --compare",
+    "compare": "node scripts/compare.ts",
+    "bench": "node scripts/bench.ts",
+    "check": "npm run data && npm run typecheck && npm run build && npm test && npm run size",
+    "prepublishOnly": "npm run check"
+  },
+  "keywords": [
+    "postal-code",
+    "postcode",
+    "zip-code",
+    "zip",
+    "validation",
+    "format",
+    "address",
+    "checkout",
+    "iso-3166",
+    "zero-dependencies"
+  ],
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "esbuild": "^0.28.2",
+    "postal-code-checker": "^2.3.0",
+    "typescript": "^7.0.2"
+  }
+}
