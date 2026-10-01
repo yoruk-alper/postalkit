@@ -2,6 +2,13 @@
 
 All notable changes to postalkit. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project follows [semantic versioning](https://semver.org/) as described under "Versioning" in the README. Data changes are listed separately because they change which codes are accepted.
 
+## [0.2.1] - 2026-10-01
+
+Documentation only: no code or data changes.
+
+- The README puts the playground first, lists the optional entry points with their sizes, explains which input is accepted right after the API, and fixes the form example's field label (it was lowercase).
+- Releases are published from GitHub Actions with npm provenance.
+
 ## [0.2.0] - 2026-10-01
 
 First public release.
