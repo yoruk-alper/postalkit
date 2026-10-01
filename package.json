@@ -98,7 +98,7 @@
     "size": "node scripts/size.ts --compare",
     "compare": "node scripts/compare.ts",
     "bench": "node scripts/bench.ts",
-    "check": "npm run data && npm run typecheck && npm run build && npm test && npm run size && npm run lint:pkg",
+    "check": "npm run data && npm run build && npm run typecheck && npm test && npm run size && npm run lint:pkg",
     "prepublishOnly": "npm run check",
     "lint:pkg": "publint && attw --pack ."
   },
