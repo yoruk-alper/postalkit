@@ -16,15 +16,23 @@ test("ESM and CommonJS builds behave the same", { skip: !built && "run npm run b
   assert.deepEqual(Object.keys(esm).sort(), Object.keys(cjs).sort());
 });
 
-test("postalkit/regions works from both builds and shares the core", { skip: !built && "run npm run build first" }, async () => {
-  const esm = await import("../dist/regions.js");
-  const cjs = createRequire(import.meta.url)("../dist/regions.cjs");
-  for (const api of [esm, cjs]) assert.deepEqual(api.findRegions("US", "90210"), [{ code: "CA", name: "California" }]);
-  const read = (f: string) => readFileSync(new URL(`../dist/${f}`, import.meta.url), "utf8");
-  assert.match(read("regions.js"), /from "\.\/index\.js"/);
-  assert.match(read("regions.cjs"), /require\("\.\/index\.cjs"\)/);
-  assert.doesNotMatch(read("regions.js"), /ACASCN/, "core data must not be bundled into regions");
-});
+const read = (f: string) => readFileSync(new URL(`../dist/${f}`, import.meta.url), "utf8");
+
+for (const [entry, check] of [
+  ["regions", (api: any) => assert.deepEqual(api.findRegions("US", "90210"), [{ code: "CA", name: "California" }])],
+  ["partial", (api: any) => assert.equal(api.checkPartial("GB", "SW1"), "partial")],
+  ["messages", (api: any) => assert.equal(api.getErrorMessage({ valid: false, error: "empty", country: "US" }), "Enter your ZIP code.")],
+] as const) {
+  test(`postalkit/${entry} works from both builds and shares the core`, { skip: !built && "run npm run build first" }, async () => {
+    const esm = await import(`../dist/${entry}.js`);
+    const cjs = createRequire(import.meta.url)(`../dist/${entry}.cjs`);
+    for (const api of [esm, cjs]) check(api);
+    assert.deepEqual(Object.keys(esm).sort(), Object.keys(cjs).sort());
+    assert.match(read(`${entry}.js`), /from "\.\/index\.js"/);
+    assert.match(read(`${entry}.cjs`), /require\("\.\/index\.cjs"\)/);
+    assert.doesNotMatch(read(`${entry}.js`), /ACASCN/, `core data must not be bundled into ${entry}`);
+  });
+}
 
 test("has no runtime dependencies", () => {
   const pkg = JSON.parse(readFileSync(new URL("../package.json", import.meta.url), "utf8"));

@@ -160,7 +160,7 @@ test("guesses the country, most likely first", () => {
 test("describes a country for forms", () => {
   assert.deepEqual(getCountryInfo("us"), {
     code: "US", alpha3: "USA", hasPostalCode: true, required: true, label: "ZIP code",
-    example: "95014", numeric: true, maxLength: 10,
+    example: "95014", numeric: true, maxLength: 10, inputMaxLength: 13,
   });
   assert.equal(getCountryInfo("IN")!.label, "PIN code");
   assert.equal(getCountryInfo("IE")!.label, "Eircode");
@@ -169,6 +169,20 @@ test("describes a country for forms", () => {
   assert.equal(getCountryInfo("GB")!.numeric, false);
   assert.equal(getCountryInfo("LV")!.numeric, true);
   assert.equal(getCountryInfo("XX"), null);
+  assert.equal(getCountryInfo("AE")!.inputMaxLength, 0);
+});
+
+test("inputMaxLength leaves room for a typed country prefix", () => {
+  const cases: [string, string][] = [["SE", "SE-114 55"], ["DE", "D-10115"], ["LI", "FL-9490"], ["NL", "NL-1234 AB"], ["US", "US-90210-1234"]];
+  for (const [c, typed] of cases) {
+    assert.ok(format(c, typed), `${c} accepts "${typed}"`);
+    assert.ok(typed.length <= getCountryInfo(c)!.inputMaxLength, `${c}: "${typed}" > inputMaxLength`);
+  }
+  for (const c of getCountries()) {
+    const info = getCountryInfo(c)!;
+    assert.ok(info.inputMaxLength >= info.maxLength, c);
+    if (info.hasPostalCode) assert.ok(`${c}-${info.example}`.length <= info.inputMaxLength, c);
+  }
 });
 
 test("lists countries and names them in any language", () => {

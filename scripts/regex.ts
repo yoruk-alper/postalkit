@@ -269,6 +269,79 @@ function emit(n: Node, top = false): string {
 }
 
 // ---------------------------------------------------------------------------
+// Prefixes, for postalkit/partial: a pattern matching every string that can still
+// be completed into a match ("SW1" for UK postcodes), the empty string included.
+
+/** A regex source matching exactly the prefixes of the strings `src` matches. */
+export function prefixPattern(src: string): string {
+  return emit(simplify(prefixes(parse(src))), true);
+}
+
+const EMPTY: Node = { t: "seq", items: [] };
+const isEmpty = (n: Node) => n.t === "seq" && !n.items.length;
+
+/** An alternation in which an empty alternative becomes optionality: (?:x|) -> (?:x)? */
+function either(items: Node[]): Node {
+  const rest = items.filter((x) => !isEmpty(x));
+  if (!rest.length) return EMPTY;
+  const body: Node = rest.length === 1 ? rest[0] : { t: "alt", items: rest };
+  return rest.length < items.length ? { t: "rep", node: body, min: 0, max: 1 } : body;
+}
+
+function prefixes(n: Node): Node {
+  switch (n.t) {
+    case "set":
+      return { t: "rep", node: n, min: 0, max: 1 };
+    case "seq": {
+      // P(a rest) = a P(rest) | P(a), which keeps the output linear in the input.
+      if (!n.items.length) return EMPTY;
+      const [first, ...rest] = n.items;
+      if (!rest.length) return prefixes(first);
+      const whole: Node = { t: "seq", items: [first, prefixes({ t: "seq", items: rest })] };
+      // A single character has no prefix but the empty one: (?:a P(rest))?
+      if (first.t === "set") return { t: "rep", node: whole, min: 0, max: 1 };
+      return either([whole, prefixes(first)]);
+    }
+    case "alt":
+      return either(n.items.map(prefixes));
+    case "rep": {
+      // Up to max-1 whole repetitions, then a prefix of one more.
+      if (n.max === 0) return EMPTY;
+      if (n.node.t === "set") return { t: "rep", node: n.node, min: 0, max: n.max }; // \d{5} -> \d{0,5}
+      if (n.max === 1) return prefixes(n.node);
+      return { t: "seq", items: [{ t: "rep", node: n.node, min: 0, max: n.max - 1 }, prefixes(n.node)] };
+    }
+  }
+}
+
+/**
+ * Whether `s` can be completed into a match of `n`, by backtracking over the pattern.
+ * An independent oracle for prefixPattern(), used to fuzz-check it at build time.
+ */
+export function canComplete(n: Node, s: string): boolean {
+  const go = (n: Node, i: number, k: (i: number) => boolean): boolean => {
+    if (i === s.length) return true; // input used up: what remains can always be completed
+    switch (n.t) {
+      case "set":
+        return n.chars.includes(s[i]) && k(i + 1);
+      case "seq": {
+        const step = (j: number, idx: number): boolean =>
+          idx === n.items.length ? k(j) : go(n.items[idx], j, (m) => step(m, idx + 1));
+        return step(i, 0);
+      }
+      case "alt":
+        return n.items.some((it) => go(it, i, k));
+      case "rep": {
+        const loop = (j: number, count: number): boolean =>
+          (count >= n.min && k(j)) || (count < n.max && go(n.node, j, (m) => m > j && loop(m, count + 1)));
+        return loop(i, 0);
+      }
+    }
+  };
+  return go(n, 0, (i) => i === s.length);
+}
+
+// ---------------------------------------------------------------------------
 // Fuzzing support: random strings that match a pattern, and near misses.
 
 export function sample(n: Node, rnd: () => number): string {

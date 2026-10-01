@@ -33,6 +33,8 @@ export interface CountryInfo {
   numeric: boolean;
   /** Length of the longest canonical code. */
   maxLength: number;
+  /** A safe `maxlength` for the input: room for a typed country prefix ("SE-114 55"). */
+  inputMaxLength: number;
 }
 
 interface Rule {
@@ -231,6 +233,7 @@ export function getCountryInfo(country: CountryInput): CountryInfo | null {
   const r = rule(country);
   if (!r) return null;
   const fl = r.fl;
+  const max = r.r.length ? r.mx + (r.at.some(Boolean) ? 1 : 0) : 0;
   return {
     code: r.c,
     alpha3: alpha3Of[r.c],
@@ -239,7 +242,9 @@ export function getCountryInfo(country: CountryInput): CountryInfo | null {
     label: LABELS[fl[0]] || "postal code",
     example: r.ex,
     numeric: fl.includes("N"),
-    maxLength: r.r.length ? r.mx + (r.at.some(Boolean) ? 1 : 0) : 0,
+    maxLength: max,
+    // Longest typed prefix (r.st is sorted longest first) plus a separator after it.
+    inputMaxLength: max && max + r.st[0].length + 1,
   };
 }
 

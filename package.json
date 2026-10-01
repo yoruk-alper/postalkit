@@ -1,6 +1,6 @@
 {
   "name": "postalkit",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Validate, format and guess postal codes for 252 countries. Forgiving input, one canonical output, a reason for every rejection. Zero dependencies, under 4 kB gzipped.",
   "license": "MIT",
   "repository": {
@@ -34,6 +34,26 @@
         "default": "./dist/regions.cjs"
       }
     },
+    "./partial": {
+      "import": {
+        "types": "./dist/partial.d.ts",
+        "default": "./dist/partial.js"
+      },
+      "require": {
+        "types": "./dist/partial.d.cts",
+        "default": "./dist/partial.cjs"
+      }
+    },
+    "./messages": {
+      "import": {
+        "types": "./dist/messages.d.ts",
+        "default": "./dist/messages.js"
+      },
+      "require": {
+        "types": "./dist/messages.d.cts",
+        "default": "./dist/messages.cjs"
+      }
+    },
     "./package.json": "./package.json"
   },
   "main": "./dist/index.cjs",
@@ -43,6 +63,12 @@
     "*": {
       "regions": [
         "./dist/regions.d.ts"
+      ],
+      "partial": [
+        "./dist/partial.d.ts"
+      ],
+      "messages": [
+        "./dist/messages.d.ts"
       ]
     }
   },

@@ -1,6 +1,6 @@
 // Builds dist/: ESM + CJS bundles (esbuild) and self-contained .d.ts files (tsc) for
-// each entry point. postalkit/regions imports the core instead of bundling a copy,
-// so an app using both ships the core once.
+// each entry point. The other entry points import the core instead of bundling a copy,
+// so an app using several ships the core once.
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { build, type Plugin } from "esbuild";
@@ -11,7 +11,7 @@ rmSync(dist, { recursive: true, force: true });
 mkdirSync(dist);
 
 const banner = "/*! postalkit | MIT | postal data derived from Google libaddressinput (CC-BY 4.0), see NOTICE */";
-const ENTRIES = ["index", "regions"];
+const ENTRIES = ["index", "regions", "partial", "messages"];
 
 /** Keep `import ... from "./index.ts"` as an import of the built core file. */
 const externalCore = (file: string): Plugin => ({

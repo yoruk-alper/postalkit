@@ -5,6 +5,8 @@
 const assert = require("assert");
 const core = require("postalkit");
 const regions = require("postalkit/regions");
+const partial = require("postalkit/partial");
+const messages = require("postalkit/messages");
 
 assert.strictEqual(core.format("ca", "k1a0t6"), "K1A 0T6");
 assert.strictEqual(core.format("JP", "１００－０００１"), "100-0001");
@@ -17,5 +19,10 @@ assert.strictEqual(typeof core.getCountryName("DE"), "string");
 
 assert.deepStrictEqual(regions.findRegions("US", "90210"), [{ code: "CA", name: "California" }]);
 assert.strictEqual(regions.isInRegion("US", "10001", "US-NY"), true);
+
+assert.strictEqual(partial.checkPartial("GB", "SW1"), "partial");
+assert.strictEqual(partial.checkPartial("DE", "1O1"), "invalid");
+assert.strictEqual(messages.getErrorMessage(core.parse("US", "9021")), "This ZIP code is too short (e.g. 95014).");
+assert.strictEqual(core.getCountryInfo("SE").inputMaxLength, 9);
 
 console.log("smoke.cjs ok on Node " + process.version);
