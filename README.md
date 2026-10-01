@@ -347,7 +347,7 @@ How the data is built is described in [CONTRIBUTING.md](./CONTRIBUTING.md#how-th
 ## Compatibility
 
 - **Node 14 and later.** CI installs the packed package on Node 14 through 24.
-- **Bun and Deno,** including Yarn Plug'n'Play and Deno's `npm:` imports.
+- **Bun, Deno and Yarn Plug'n'Play,** including Deno's `npm:` imports.
 - **Browsers:** current Chrome, Firefox and Safari, tested in CI both unbundled and through Vite and webpack. Older browsers from Chrome 64, Firefox 78 and Safari 11.1 should work (the first with the Unicode regex features postalkit uses) but aren't tested. Where `Intl.DisplayNames` is missing (before Chrome 81, Firefox 86, Safari 14.1), `getCountryName` returns the code.
 - **ES modules and CommonJS,** with TypeScript types for both. No build step, polyfills or configuration.
 - **Tree-shakeable** (`sideEffects: false`): bundlers keep only what you import.
