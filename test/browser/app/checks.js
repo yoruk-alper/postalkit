@@ -23,7 +23,7 @@ export function run({ core, regions, partial, messages }) {
   eq("guessCountry", core.guessCountry("K1A 0T6"), ["CA"]);
   eq("getCountries", core.getCountries().length, 252);
   eq("getCountryName", core.getCountryName("DE", "de"), "Deutschland");
-  eq("inputMaxLength", core.getCountryInfo("SE").inputMaxLength, 11);
+  eq("inputMaxLength", core.getCountryInfo("SE").inputMaxLength, 12);
   eq("findRegions", regions.findRegions("US", "90210"), [{ code: "CA", name: "California" }]);
   eq("checkPartial", ["SW1", "SW1A 1AA", "QQ1"].map((x) => partial.checkPartial("GB", x)), ["partial", "complete", "invalid"]);
   eq("getErrorMessage", messages.getErrorMessage(core.parse("US", "9021")), "This ZIP code is too short (e.g. 95014).");

@@ -13,6 +13,10 @@ export type PartialStatus = "complete" | "partial" | "invalid";
 
 const cache: { [code: string]: RegExp } = {};
 
+// A number here is digits being typed (an <input type="number">), not a spreadsheet cell whose
+// leading zeros were dropped, so parse must not pad it: 902 is the start of a ZIP, not "00902".
+const typed = (input: unknown): unknown => (Number.isInteger(input) && (input as number) >= 0 ? "" + input : input);
+
 /**
  * Whether what has been typed so far is a valid postal code, could still become one, or can't.
  * Show an error only for `"invalid"` while the field has focus, and run `parse` on blur.
@@ -23,6 +27,7 @@ const cache: { [code: string]: RegExp } = {};
  * @example checkPartial("DE", "1O1")      // "invalid" (letter O)
  */
 export function checkPartial(country: CountryInput, input: unknown): PartialStatus {
+  input = typed(input);
   const r = parse(country, input);
   if (r.valid) return "complete";
   const c = r.country;
@@ -41,6 +46,7 @@ export function checkPartial(country: CountryInput, input: unknown): PartialStat
  * @example parseTyped("GB", "QQ1")  // { valid: false, error: "invalid-format", country: "GB" }
  */
 export function parseTyped(country: CountryInput, input: unknown): ParseResult {
+  input = typed(input);
   const r = parse(country, input);
   return !r.valid && r.error === "too-short" && checkPartial(country, input) === "invalid"
     ? { valid: false, error: "invalid-format", country: r.country }

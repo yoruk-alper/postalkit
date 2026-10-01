@@ -66,7 +66,7 @@ interface Rule {
   mx: number;
   ex: string;
   fl: string;
-  st: string[]; // prefixes people write in front of the code, longest first
+  st: string[]; // prefixes people write in front of the code (alpha-2, alpha-3, "D"), longest first
   pre: string; // fixed prefix that may be omitted ("LV" in "LV-1050")
 }
 
@@ -129,7 +129,7 @@ function rule(country: unknown): Rule | undefined {
       mx: len ? parseInt(len[1], 36) : n,
       ex,
       fl,
-      st: (st ? st.split("!") : []).concat(c).sort((a, b) => b.length - a.length),
+      st: (st ? st.split("!") : []).concat(c, alpha3Of[c]).sort((a, b) => b.length - a.length),
       pre: fl.includes("N") ? (/^[A-Z]+/.exec(p) || [""])[0] : "",
     }));
   }
@@ -171,7 +171,9 @@ function run(country: unknown, code: unknown): [Rule | undefined, string, string
   if (!r) return [r, s, s, null];
   if (!r.r.length) return [r, s, s, s ? null : ""];
   if (!s) return [r, s, s, r.fl.includes("R") ? null : ""]; // empty is fine where a code is optional
-  const [t, value] = attempt(r, s, true);
+  let [t, value] = attempt(r, s, true);
+  // Spreadsheets store codes as numbers and drop their leading zeros: 2134 was "02134". A 0 is a blank cell.
+  for (let z = s; value === null && typeof code == "number" && code > 0 && r.fl.includes("N") && z.length < r.mx; ) value = attempt(r, (z = "0" + z), true)[1];
   return [r, s, t, value];
 }
 
@@ -199,11 +201,13 @@ export function parse(country: CountryInput, code: unknown): ParseResult {
 
 /**
  * `parse` for many codes of one country, e.g. a CSV column. One result per input, same order.
+ * A single string counts as one code.
  *
  * @example parseMany("US", ["90210", "", "9021"]).filter((r) => !r.valid)
  */
 export function parseMany(country: CountryInput, codes: Iterable<unknown>): ParseResult[] {
-  return Array.from(codes || [], (code) => parse(country, code));
+  // A string is iterable too, but "90210" is one code, not five.
+  return Array.from(typeof codes === "string" ? [codes] : codes || [], (code) => parse(country, code));
 }
 
 /**

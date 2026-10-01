@@ -9,7 +9,7 @@ First public release.
 ### Validation and formatting
 
 - `parse`, `parseMany`, `isValid`, `format` for 252 countries and territories, with a reason for every rejection (`empty`, `unknown-country`, `not-applicable`, `invalid-chars`, `too-short`, `too-long`, `invalid-format`). Never throws.
-- Forgiving input: case, spacing and separators, full-width characters, digits in any script (Arabic-Indic, Persian, Devanagari, Bengali, Thai, ...), typed country prefixes (`"SE-114 55"`, `"D-10115"`) and omitted fixed prefixes (`"1050"` in Latvia).
+- Forgiving input: case, spacing and separators, full-width characters, digits in any script (Arabic-Indic, Persian, Devanagari, Bengali, Thai, ...), typed country prefixes (`"SE-114 55"`, `"SWE-114 55"`, `"D-10115"`), omitted fixed prefixes (`"1050"` in Latvia), invisible characters copied from web pages (zero-width spaces, soft hyphens), and numbers from spreadsheets, with the leading zeros they dropped restored (`2134` is `02134` in the US).
 - An empty field is valid for the 70 countries without postal codes and the 108 where addresses don't require one.
 - Countries as alpha-2 or alpha-3 codes, in any case, plus `UK` and `EL`.
 - `guessCountry`, `getCountryInfo` (label, example, `inputmode`, `maxLength`, `inputMaxLength`), `getCountries`, `getCountryName`.

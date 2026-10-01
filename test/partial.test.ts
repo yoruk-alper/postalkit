@@ -20,7 +20,8 @@ test("tells complete, still-typing and hopeless input apart", () => {
     ["US", "9021", "partial"],
     ["US", "90210", "complete"], // valid, though ZIP+4 could follow
     ["US", "90210-12", "partial"],
-    ["US", 902, "partial"],
+    ["US", 902, "partial"], // a number being typed is not zero-padded like a spreadsheet cell
+    ["US", 9021.5, "invalid"],
     ["DE", "1O1", "invalid"], // letter O typed for zero
     ["CA", "K1A 0T", "partial"],
     ["CA", "D1A", "invalid"], // D never starts a Canadian postcode
@@ -68,7 +69,9 @@ test("complete exactly when parse accepts, and never throws", () => {
     for (let i = 0; i < 40; i++) inputs.push(mutate(ex, rnd), ex.slice(0, Math.floor(rnd() * (ex.length + 1))));
     for (const x of inputs) {
       const status = checkPartial(cc, x);
-      assert.equal(status === "complete", isValid(cc, x), `${cc} ${JSON.stringify(x)}`);
+      // Numbers are typed digits here, where isValid would restore a spreadsheet's dropped zeros.
+      const asTyped = Number.isInteger(x) && (x as number) >= 0 ? "" + x : x;
+      assert.equal(status === "complete", isValid(cc, asTyped), `${cc} ${JSON.stringify(x)}`);
     }
   }
   for (const c of [null, undefined, 42, {}, "__proto__", "constructor"]) assert.equal(checkPartial(c as string, "1"), "invalid");
@@ -79,6 +82,7 @@ test("parseTyped calls a start that can't be completed invalid, not short", () =
   assert.deepEqual(parseTyped("GB", "SW1A"), { valid: false, error: "too-short", country: "GB" });
   assert.deepEqual(parseTyped("CA", "D1A"), { valid: false, error: "invalid-format", country: "CA" });
   assert.deepEqual(parseTyped("US", "90210"), { valid: true, value: "90210", country: "US" });
+  assert.deepEqual(parseTyped("US", 2134), { valid: false, error: "too-short", country: "US" });
   // Otherwise identical to parse.
   for (const cc of getCountries()) {
     const rnd = prng(cc.charCodeAt(0) * 211 + cc.charCodeAt(1));

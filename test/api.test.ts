@@ -43,7 +43,11 @@ test("forgives how people and keyboards actually type", () => {
     ["BR", "01.310-100", "01310-100"], // dotted CEP
     ["CA", "k1a\t0t6", "K1A 0T6"],
     ["CA", `K1A${String.fromCharCode(0xa0)}0T6`, "K1A 0T6"], // non-breaking space from copy-paste
+    ["US", "902\u200b10", "90210"], // zero-width space from a web page
+    ["US", "\ufeff90210\u00ad1234", "90210-1234"], // byte order mark, soft hyphen
     ["SE", "SE-114 55", "114 55"], // country prefix
+    ["SE", "SWE-114 55", "114 55"], // alpha-3 country prefix
+    ["US", "USA 90210", "90210"],
     ["SE", "S-114 55", "114 55"], // old vehicle code
     ["DE", "D-10115", "10115"],
     ["FR", "F-75001", "75001"],
@@ -144,9 +148,22 @@ test("never throws, whatever it is given", () => {
 test("accepts whole numbers, as spreadsheets produce them", () => {
   assert.equal(format("US", 90210), "90210");
   assert.equal(format("DE", 10115), "10115");
-  assert.equal(parse("US", 2134).valid, false); // a ZIP that lost its leading zero is still reported
   assert.equal(format("US", 9021.5), null); // not "90215"
-  assert.equal(format("US", -90210), null);
+  assert.deepEqual(parse("US", 9021.5), { valid: false, error: "invalid-chars", country: "US" });
+  assert.deepEqual(parse("US", -90210), { valid: false, error: "invalid-chars", country: "US" }); // not "empty"
+  assert.deepEqual(parse("US", NaN), { valid: false, error: "empty", country: "US" });
+});
+
+test("restores the leading zeros a spreadsheet dropped", () => {
+  assert.equal(format("US", 2134), "02134");
+  assert.equal(format("US", 21341234), "02134-1234");
+  assert.equal(format("IT", 100), "00100");
+  assert.equal(format("PL", 950), "00-950");
+  assert.equal(format("DE", 1067), "01067");
+  assert.equal(format("US", "2134"), null); // only numbers lost zeros; a typed string is taken as is
+  assert.equal(format("GB", 1234), null); // not a digits-only country
+  assert.equal(format("AF", 0), null); // a blank cell, not "0000"
+  assert.equal(parse("US", 1234567890).valid, false); // too long to pad
 });
 
 test("parses many codes at once, one result per input", () => {
@@ -155,6 +172,7 @@ test("parses many codes at once, one result per input", () => {
   assert.equal(parseMany("XX", ["1"])[0].valid, false);
   assert.deepEqual(parseMany("US", new Set(["10001"])).map((r) => r.valid), [true]);
   assert.deepEqual(parseMany("US", null as never), []);
+  assert.deepEqual(parseMany("US", "90210").map((r) => r.valid), [true]); // one code, not five characters
 });
 
 test("Eircodes: real format only", () => {
@@ -178,7 +196,7 @@ test("guesses the country, most likely first", () => {
 test("describes a country for forms", () => {
   assert.deepEqual(getCountryInfo("us"), {
     code: "US", alpha3: "USA", hasPostalCode: true, required: true, label: "ZIP code",
-    example: "95014", numeric: true, maxLength: 10, inputMaxLength: 15,
+    example: "95014", numeric: true, maxLength: 10, inputMaxLength: 16,
   });
   assert.equal(getCountryInfo("IN")!.label, "PIN code");
   assert.equal(getCountryInfo("IE")!.label, "Eircode");
@@ -191,7 +209,7 @@ test("describes a country for forms", () => {
 });
 
 test("inputMaxLength leaves room for a typed country prefix", () => {
-  const cases: [string, string][] = [["SE", "SE-114 55"], ["SE", "SE - 114 55"], ["DE", "D - 10115"], ["DE", "D-10115"], ["LI", "FL-9490"], ["NL", "NL-1234 AB"], ["US", "US-90210-1234"]];
+  const cases: [string, string][] = [["SE", "SE-114 55"], ["SE", "SE - 114 55"], ["DE", "D - 10115"], ["DE", "D-10115"], ["LI", "FL-9490"], ["NL", "NL-1234 AB"], ["US", "US-90210-1234"], ["US", "USA - 90210-1234"], ["GB", "GBR SW1A 1AA"]];
   for (const [c, typed] of cases) {
     assert.ok(format(c, typed), `${c} accepts "${typed}"`);
     assert.ok(typed.length <= getCountryInfo(c)!.inputMaxLength, `${c}: "${typed}" > inputMaxLength`);
@@ -199,7 +217,7 @@ test("inputMaxLength leaves room for a typed country prefix", () => {
   for (const c of getCountries()) {
     const info = getCountryInfo(c)!;
     assert.ok(info.inputMaxLength >= info.maxLength, c);
-    if (info.hasPostalCode) assert.ok(`${c}-${info.example}`.length <= info.inputMaxLength, c);
+    if (info.hasPostalCode) assert.ok(`${info.alpha3} - ${info.example}`.length <= info.inputMaxLength, c);
   }
 });
 

@@ -8,9 +8,9 @@
 
 Validate, format and guess postal codes for **252 countries**. Accepts what people actually type, returns one canonical form to store, and tells you *why* a code was rejected.
 
-- **Zero dependencies. 4.2 kB gzipped** for the whole API (3.6 kB if you only use `isValid`).
+- **Zero dependencies. 4.3 kB gzipped** for the whole API (3.7 kB if you only use `isValid`).
 - **Forgiving input, canonical output.** `"k1a-0t6"`, `"K1A0T6"` and `" k1a  0t6 "` all become `K1A 0T6`.
-- **Never throws.** `null`, numbers from spreadsheets, objects: you always get a result.
+- **Never throws.** `null`, numbers from spreadsheets, objects: you always get a result. A ZIP code a spreadsheet stored as `2134` gets its leading zero back: `02134`.
 - **Correct about when a code is needed.** An empty field is valid for the 70 countries without postal codes (the UAE, Hong Kong, ...) and the 108 where addresses don't require one (Argentina, Bulgaria, ...).
 - **Reads any keyboard.** Full-width, Arabic, Persian, Devanagari, Bengali, Thai and other native digits are understood: `"۱۱۹۳۶۱۲۳۴۵"` is `11936-12345` in Iran.
 - **Built for forms:** field label, placeholder, `inputmode` and `maxlength` per country, validation *as you type* (`postalkit/partial`) and ready-made error messages (`postalkit/messages`).
@@ -41,7 +41,7 @@ guessCountry("12345");           // ["US", "DE", "FR", "IT", "ES", ...]  most li
 
 getCountryInfo("US");
 // { code: "US", alpha3: "USA", hasPostalCode: true, required: true, label: "ZIP code",
-//   example: "95014", numeric: true, maxLength: 10, inputMaxLength: 15 }
+//   example: "95014", numeric: true, maxLength: 10, inputMaxLength: 16 }
 ```
 
 [Try it in the playground](https://yoruk-alper.github.io/postalkit/playground/) · [API reference](https://yoruk-alper.github.io/postalkit/api/)
@@ -61,8 +61,8 @@ Measured by `npm run size`, `npm run compare` and `npm run bench` in this repo (
 
 |                                                    | postal-code-checker 2.3.0 | postalkit |
 | -------------------------------------------------- | ------------------------: | --------: |
-| Bundle, whole API (min + gzip)                     |                   21.0 kB |  **4.2 kB** |
-| Bundle, validation only (min + gzip)               |                    7.7 kB |  **3.6 kB** |
+| Bundle, whole API (min + gzip)                     |                   21.0 kB |  **4.3 kB** |
+| Bundle, validation only (min + gzip)               |                    7.7 kB |  **3.7 kB** |
 | Install size (unpacked, all entry points)          |                    288 kB |  **137 kB** |
 | Real-world inputs accepted/rejected correctly      |                     10/22 |   **22/22** |
 | Real-world inputs returned in canonical form       |                      2/22 |   **22/22** |
@@ -72,7 +72,7 @@ Measured by `npm run size`, `npm run compare` and `npm run bench` in this repo (
 | Countries                                          |                       249 | **252** (adds Kosovo, Ascension, Tristan da Cunha) |
 | Says why a code is invalid                         |                        no |   **yes** |
 | State/province from a postal code (23 countries)   |       yes, always bundled |   **yes, opt-in** (`postalkit/regions`) |
-| Core + regions (min + gzip)                        |                   21.0 kB |  **14.3 kB** |
+| Core + regions (min + gzip)                        |                   21.0 kB |  **14.4 kB** |
 | `validate(country, null)`                          |                    throws |   **returns a result** |
 | Validation while typing                            |                        no |   **yes, opt-in** (`postalkit/partial`) |
 | Tested against real postal codes                   |                        no |   **22,484 codes, 121 countries** |
@@ -103,6 +103,8 @@ type ParseResult =
 
 `parse` for a whole column (a CSV import, a bulk upload): one result per input, in the same order, each with the canonical value or the reason it failed. A bad cell never stops the batch.
 
+Cells that a spreadsheet turned into numbers are handled: in digits-only countries, leading zeros it dropped are restored (`2134` is `02134` in the US, `100` is `00100` in Italy). Only whole numbers can be codes; `9021.5` and `-90210` are `invalid-chars`.
+
 ```ts
 const results = parseMany("US", rows.map((r) => r.zip));
 const bad = rows.filter((_, i) => !results[i].valid);
@@ -132,11 +134,11 @@ interface CountryInfo {
   example: string;        // canonical, for a placeholder
   numeric: boolean;       // digits only: inputmode="numeric" is safe
   maxLength: number;      // longest canonical code
-  inputMaxLength: number; // a safe maxlength for the input, with room for "SE-" or "D - "
+  inputMaxLength: number; // a safe maxlength for the input, with room for "SWE-" or "D - "
 }
 ```
 
-Use `inputMaxLength`, not `maxLength`, as the input's `maxlength`: people type country prefixes (`"SE - 114 55"` is 11 characters, the canonical `"114 55"` is 6), and the prefix is removed for you.
+Use `inputMaxLength`, not `maxLength`, as the input's `maxlength`: people type country prefixes (`"SWE - 114 55"` is 12 characters, the canonical `"114 55"` is 6), and the prefix is removed for you.
 
 `numeric` already accounts for separators and fixed prefixes, which are added for you. A phone keypad without a hyphen still works for US ZIP+4 (`902101234` becomes `90210-1234`) and Latvia (`1050` becomes `LV-1050`).
 

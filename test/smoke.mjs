@@ -22,6 +22,6 @@ assert.strictEqual(parseTyped("GB", "QQ1").error, "invalid-format");
 assert.strictEqual(format("IR", "۱۱۹۳۶۱۲۳۴۵"), "11936-12345");
 assert.strictEqual(isValid("AR", ""), true);
 assert.strictEqual(getErrorMessage(parse("US", "9021")), "This ZIP code is too short (e.g. 95014).");
-assert.strictEqual(getCountryInfo("SE").inputMaxLength, 11);
+assert.strictEqual(getCountryInfo("SE").inputMaxLength, 12);
 
 console.log("smoke.mjs ok on Node " + process.version);
