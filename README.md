@@ -1,5 +1,11 @@
 # postalkit
 
+[![npm](https://img.shields.io/npm/v/postalkit)](https://www.npmjs.com/package/postalkit)
+[![CI](https://github.com/yoruk-alper/postalkit/actions/workflows/ci.yml/badge.svg)](https://github.com/yoruk-alper/postalkit/actions/workflows/ci.yml)
+[![minzipped size](https://img.shields.io/bundlejs/size/postalkit)](https://bundlejs.com/?q=postalkit)
+[![types](https://img.shields.io/npm/types/postalkit)](https://www.npmjs.com/package/postalkit)
+[![license](https://img.shields.io/npm/l/postalkit)](./LICENSE)
+
 Validate, format and guess postal codes for **252 countries**. Accepts what people actually type, returns one canonical form to store, and tells you *why* a code was rejected.
 
 - **Zero dependencies. 4.2 kB gzipped** for the whole API (3.6 kB if you only use `isValid`).
@@ -40,6 +46,15 @@ getCountryInfo("US");
 
 [Try it in the playground](https://yoruk-alper.github.io/postalkit/playground/) · [API reference](https://yoruk-alper.github.io/postalkit/api/)
 
+**Contents:** [Compatibility](#compatibility) · [API](#api) · [Regions](#regions-postalkitregions) · [As you type](#as-you-type-postalkitpartial) · [Error messages](#error-messages-postalkitmessages) · [Territories](#territories) · [Forms](#using-it-in-a-form) · [Recipes](#recipes) · [Data](#data) · [Limitations](#limitations)
+
+## Compatibility
+
+- **Node 14 and later.** CI installs the packed package on Node 14 through 24.
+- **Browsers:** current Chrome, Firefox and Safari, which CI tests (Chromium, Firefox and WebKit, unbundled and through Vite and webpack). Older browsers work from Chrome 64, Firefox 78 and Safari 11.1, the first with the Unicode regex features postalkit uses; those versions aren't tested. `getCountryName` returns the code itself where `Intl.DisplayNames` is missing (before Chrome 81, Firefox 86, Safari 14.1).
+- **ES modules and CommonJS**, with TypeScript types for both. No build step, polyfills or configuration needed.
+- **Tree-shakeable** (`sideEffects: false`): bundlers keep only what you import.
+
 ## Compared with postal-code-checker
 
 Measured by `npm run size`, `npm run compare` and `npm run bench` in this repo (Node 24).
@@ -48,7 +63,7 @@ Measured by `npm run size`, `npm run compare` and `npm run bench` in this repo (
 | -------------------------------------------------- | ------------------------: | --------: |
 | Bundle, whole API (min + gzip)                     |                   21.0 kB |  **4.2 kB** |
 | Bundle, validation only (min + gzip)               |                    7.7 kB |  **3.6 kB** |
-| Install size (unpacked, all entry points)          |                    288 kB |  **130 kB** |
+| Install size (unpacked, all entry points)          |                    288 kB |  **137 kB** |
 | Real-world inputs accepted/rejected correctly      |                     10/22 |   **22/22** |
 | Real-world inputs returned in canonical form       |                      2/22 |   **22/22** |
 | Validate a UK postcode (ops/sec)                   |                      0.9M |  **7.4M** |
@@ -95,7 +110,7 @@ const bad = rows.filter((_, i) => !results[i].valid);
 
 ### `isValid(country, code): boolean`
 
-`parse(...).valid`, without building the result object. An empty value is valid for countries without postal codes.
+`parse(...).valid`, without building the result object. An empty value is valid where a postal code isn't required (`getCountryInfo(c).required` is false), including countries without postal codes.
 
 ### `format(country, code): string | null`
 
@@ -258,7 +273,7 @@ input.addEventListener("blur", () => {
 
 If your carrier needs a postal code even where addresses don't, require `r.value !== ""` yourself.
 
-[The playground](./playground/index.html) is this pattern, working.
+[The playground](https://yoruk-alper.github.io/postalkit/playground/) is this pattern, working.
 
 ## Recipes
 
