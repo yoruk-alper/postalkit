@@ -16,6 +16,7 @@ jobs:
   check:
     name: Check (data, types, build, tests, size, package)
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -38,6 +39,7 @@ jobs:
     name: Consumer on Node ${{ matrix.node }}
     needs: check
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     strategy:
       fail-fast: false
       matrix:
@@ -66,6 +68,7 @@ jobs:
     # The packed package in Chromium, Firefox and WebKit: native ES modules, Vite, and webpack (ESM and CommonJS).
     name: Browsers and bundlers
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -78,4 +81,5 @@ jobs:
       - run: npm ci
       - run: npm ci --prefix test/browser
       - run: npx --prefix test/browser playwright install --with-deps chromium firefox webkit
+        timeout-minutes: 8 # an apt mirror or the browser CDN can hang
       - run: npm run test:browser
