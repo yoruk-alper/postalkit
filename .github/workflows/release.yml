@@ -1,16 +1,16 @@
 name: Release
 
-# Push a tag matching package.json (git tag v0.2.0 && git push --tags) to publish to npm.
-# Needs an NPM_TOKEN secret, or npm trusted publishing configured for this workflow
-# (then NODE_AUTH_TOKEN can be removed). npm only attests provenance for public
-# repositories, so --provenance is added once the repository is public.
+# Push a tag matching package.json (git tag v0.3.0 && git push --tags) to publish to npm.
+# Publishes through npm trusted publishing (configured for this workflow on npmjs.com),
+# so no token is needed and npm attests provenance automatically. The GitHub release
+# notes are the version's section of CHANGELOG.md.
 on:
   push:
     tags: ["v*"]
 
 permissions:
   contents: write # gh release create
-  id-token: write # npm provenance
+  id-token: write # npm trusted publishing and provenance
 
 jobs:
   publish:
@@ -26,10 +26,11 @@ jobs:
         run: test "v$(node -p 'require("./package.json").version')" = "$GITHUB_REF_NAME"
       - run: npm ci
       - run: npm run check
-      - run: npm publish --access public ${{ github.event.repository.private && ' ' || '--provenance' }}
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - run: npm publish --access public --provenance
       - name: Create the GitHub release
-        run: gh release create "$GITHUB_REF_NAME" --verify-tag --generate-notes
+        run: |
+          awk -v v="${GITHUB_REF_NAME#v}" '$0 ~ "^## \\[" v "\\]" {f=1; next} /^## \[/ {f=0} f' CHANGELOG.md > notes.md
+          test -s notes.md
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "postalkit ${GITHUB_REF_NAME#v}" --notes-file notes.md
         env:
           GH_TOKEN: ${{ github.token }}
