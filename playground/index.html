@@ -30,7 +30,13 @@
   @media (max-width: 560px) { .fields { grid-template-columns: 1fr; } }
   label { display: block; font-size: 14px; font-weight: 600; margin-bottom: 6px; }
   label small { font-weight: 400; color: var(--muted); }
-  select, input { width: 100%; font: inherit; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg); color: var(--text); }
+  select, input { width: 100%; height: 48px; margin: 0; font: inherit; padding: 0 12px; border-radius: 8px; border: 1px solid var(--border); background-color: var(--bg); color: var(--text); }
+  select {
+    appearance: none; -webkit-appearance: none; padding-right: 36px; cursor: pointer;
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted) 50%), linear-gradient(135deg, var(--muted) 50%, transparent 50%);
+    background-position: calc(100% - 19px) 50%, calc(100% - 14px) 50%;
+    background-size: 5px 5px; background-repeat: no-repeat;
+  }
   input { font-family: var(--mono); font-size: 18px; letter-spacing: 0.04em; }
   select:focus, input:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
   .status { margin-top: 14px; padding: 10px 12px; border-radius: 8px; font-size: 15px; display: flex; gap: 8px; align-items: baseline; }
