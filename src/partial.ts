@@ -1,6 +1,7 @@
 // postalkit/partial: validation while the user is still typing.
 // A separate entry point so the core stays small for everyone who doesn't need it.
 import { parse, type CountryInput } from "./index.ts";
+import { clean } from "./normalize.ts";
 import { PARTIAL } from "./partial-data.ts";
 
 /**
@@ -10,15 +11,7 @@ import { PARTIAL } from "./partial-data.ts";
  */
 export type PartialStatus = "complete" | "partial" | "invalid";
 
-// Same normalization as the core: separators the core ignores (see SEPARATORS in src/index.ts).
-const SEPARATORS = /[\s.\-_‐-―−ー〒]/g;
 const cache: { [code: string]: RegExp } = {};
-
-function clean(input: unknown): string {
-  let s = typeof input === "string" ? input : Number.isInteger(input) && (input as number) >= 0 ? "" + input : "";
-  if (/[^\x20-\x7e]/.test(s) && s.normalize) s = s.normalize("NFKC");
-  return s.toUpperCase().replace(SEPARATORS, "");
-}
 
 /**
  * Whether what has been typed so far is a valid postal code, could still become one, or can't.

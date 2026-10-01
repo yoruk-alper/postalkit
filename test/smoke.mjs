@@ -19,6 +19,6 @@ assert.strictEqual(isInRegion("US", "10001", "US-NY"), true);
 assert.strictEqual(checkPartial("GB", "SW1"), "partial");
 assert.strictEqual(checkPartial("DE", "1O1"), "invalid");
 assert.strictEqual(getErrorMessage(parse("US", "9021")), "This ZIP code is too short (e.g. 95014).");
-assert.strictEqual(getCountryInfo("SE").inputMaxLength, 9);
+assert.strictEqual(getCountryInfo("SE").inputMaxLength, 11);
 
 console.log("smoke.mjs ok on Node " + process.version);

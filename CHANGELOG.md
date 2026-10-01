@@ -8,7 +8,7 @@ All notable changes to postalkit. The format follows [Keep a Changelog](https://
 
 - `postalkit/partial`: `checkPartial(country, input)` tells whether input is `"complete"`, `"partial"` (could still become valid) or `"invalid"` while the user types. Adds 2.5 kB gzip, only when imported.
 - `postalkit/messages`: `getErrorMessage(result)` gives English error messages using the country's own word for the code ("This ZIP code is too short (e.g. 95014)."), with `MESSAGES` that can be reworded or translated. Adds 0.3 kB gzip.
-- `CountryInfo.inputMaxLength`: a `maxlength` for the input with room for a typed country prefix (`"SE-114 55"`). `maxLength` stays the canonical length.
+- `CountryInfo.inputMaxLength`: a `maxlength` for the input with room for a typed country prefix (`"SE - 114 55"`). `maxLength` stays the canonical length.
 - Documentation comments on every exported type, and generated API reference (`npm run docs`).
 - `typesVersions`, so `postalkit/regions` and the new entry points resolve in TypeScript projects using `moduleResolution: "node"`.
 

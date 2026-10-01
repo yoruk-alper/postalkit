@@ -34,7 +34,7 @@ guessCountry("12345");           // ["US", "DE", "FR", "IT", "ES", ...]  most li
 
 getCountryInfo("US");
 // { code: "US", alpha3: "USA", hasPostalCode: true, required: true, label: "ZIP code",
-//   example: "95014", numeric: true, maxLength: 10, inputMaxLength: 13 }
+//   example: "95014", numeric: true, maxLength: 10, inputMaxLength: 15 }
 ```
 
 [Try it in the playground](https://yoruk-alper.github.io/postalkit/playground/) · [API reference](https://yoruk-alper.github.io/postalkit/api/)
@@ -116,11 +116,11 @@ interface CountryInfo {
   example: string;        // canonical, for a placeholder
   numeric: boolean;       // digits only: inputmode="numeric" is safe
   maxLength: number;      // longest canonical code
-  inputMaxLength: number; // a safe maxlength for the input, with room for "SE-" or "D-"
+  inputMaxLength: number; // a safe maxlength for the input, with room for "SE-" or "D - "
 }
 ```
 
-Use `inputMaxLength`, not `maxLength`, as the input's `maxlength`: people type country prefixes (`"SE-114 55"` is 9 characters, the canonical `"114 55"` is 6), and the prefix is removed for you.
+Use `inputMaxLength`, not `maxLength`, as the input's `maxlength`: people type country prefixes (`"SE - 114 55"` is 11 characters, the canonical `"114 55"` is 6), and the prefix is removed for you.
 
 `numeric` already accounts for separators and fixed prefixes, which are added for you. A phone keypad without a hyphen still works for US ZIP+4 (`902101234` becomes `90210-1234`) and Latvia (`1050` becomes `LV-1050`).
 

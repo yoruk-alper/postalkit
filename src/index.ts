@@ -1,4 +1,5 @@
 import { ALPHA3, NONE, RULES, type CountryCode } from "./data.ts";
+import { clean } from "./normalize.ts";
 
 export type { CountryCode };
 
@@ -52,7 +53,7 @@ export interface CountryInfo {
   numeric: boolean;
   /** Length of the longest canonical code. */
   maxLength: number;
-  /** A safe `maxlength` for the input: room for a typed country prefix ("SE-114 55"). */
+  /** A safe `maxlength` for the input: room for a typed country prefix and separator ("SE - 114 55"). */
   inputMaxLength: number;
 }
 
@@ -71,8 +72,6 @@ interface Rule {
 
 const ALIASES: { [code: string]: CountryCode } = { UK: "GB", EL: "GR" };
 const LABELS: { [flag: string]: CountryInfo["label"] } = { z: "ZIP code", p: "PIN code", e: "Eircode", c: "postcode" };
-// Spaces, dots, hyphens and dashes (U+2010-U+2015), minus (U+2212), "ー" (U+30FC, typed as a dash in Japanese), "〒".
-const SEPARATORS = /[\s.\-_‐-―−ー〒]/g;
 // Rules by country argument as given ("US", "usa", ...). Only short keys are kept, so it stays bounded.
 const memo = new Map<string, Rule>();
 let table: { [code: string]: string } | undefined; // code -> packed entry, "" without postal codes
@@ -136,14 +135,6 @@ function rule(country: unknown): Rule | undefined {
   }
   if ((country as string).length < 4) memo.set(country as string, r);
   return r;
-}
-
-/** Uppercase, fold full-width characters, drop every separator. */
-function clean(input: unknown): string {
-  // Whole numbers only: 9021.5 must not become "90215" once the dot is dropped.
-  let s = typeof input === "string" ? input : Number.isInteger(input) && (input as number) >= 0 ? "" + input : "";
-  if (/[^\x20-\x7e]/.test(s) && s.normalize) s = s.normalize("NFKC");
-  return s.toUpperCase().replace(SEPARATORS, "");
 }
 
 /** Canonical form of `s` if it matches, else null. */
@@ -262,8 +253,8 @@ export function getCountryInfo(country: CountryInput): CountryInfo | null {
     example: r.ex,
     numeric: fl.includes("N"),
     maxLength: max,
-    // Longest typed prefix (r.st is sorted longest first) plus a separator after it.
-    inputMaxLength: max && max + r.st[0].length + 1,
+    // Longest typed prefix (r.st is sorted longest first) plus a separator after it, up to " - ".
+    inputMaxLength: max && max + r.st[0].length + 3,
   };
 }
 
