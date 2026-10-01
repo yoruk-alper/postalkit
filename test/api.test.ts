@@ -183,3 +183,26 @@ test("lists countries and names them in any language", () => {
   assert.equal(getCountryName("XK"), "Kosovo");
   assert.equal(getCountryName("XX"), "");
 });
+
+test("territories: codes valid under the territory and the parent's system", () => {
+  const cases: [territory: string, parent: string, code: string][] = [
+    ["PR", "US", "00901"],
+    ["GU", "US", "96910"],
+    ["VI", "US", "00802"],
+    ["AX", "FI", "22100"],
+    ["GP", "FR", "97100"],
+    ["RE", "FR", "97400"],
+    ["SJ", "NO", "9170"],
+  ];
+  for (const [territory, parent, code] of cases) {
+    assert.equal(format(territory, code), code, `${territory} ${code}`);
+    assert.equal(format(parent, code), code, `${parent} ${code}`);
+    assert.ok(guessCountry(code).includes(territory as never), `guessCountry("${code}") misses ${territory}`);
+  }
+  // A territory-specific range or prefix puts the territory first.
+  assert.equal(guessCountry("00901")[0], "PR");
+  assert.equal(guessCountry("96910")[0], "GU");
+  assert.equal(guessCountry("AX-22100")[0], "AX");
+  // Guadeloupe, Saint-Martin and Saint-Barthélemy share one pattern: the most populous comes first.
+  assert.deepEqual(guessCountry("97100").slice(0, 3), ["GP", "MF", "BL"]);
+});

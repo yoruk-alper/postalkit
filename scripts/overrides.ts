@@ -16,6 +16,8 @@ export interface Override {
   example?: string;
   /** Deliberately stricter than upstream; tests then skip "accepts everything Google accepts". */
   narrows?: boolean;
+  /** Deliberately accepts codes upstream rejects; tests then skip "output satisfies Google's pattern". */
+  widens?: boolean;
 }
 
 const US_ZIP = { why: "US ZIP+4 territory; upstream examples never show the +4 form", format: "5-" };
@@ -60,6 +62,12 @@ export const OVERRIDES: Record<string, Override> = {
     alts: () => [["[0-2]\\d{4}", ""], ["LIMA\\d{1,2}", "4 "], ["CALLAO0?\\d", "6 "]],
   },
   AM: { why: "the first upstream example is the legacy 6-digit form", example: "0010" },
+  AR: {
+    why: "upstream accepts only the 8-character CPA (C1070AAM), but the 4-digit code (1070) is what most "
+      + "addresses use: every GeoNames code is 4-digit, and upstream's own region prefixes (B?[1-36-8]) allow it",
+    alts: (rx) => [[rx, ""], ["\\d{4}", ""]],
+    widens: true,
+  },
   AS: US_ZIP,
   FM: US_ZIP,
   GU: US_ZIP,
@@ -88,4 +96,6 @@ export const POPULARITY = [
   "RU", "TR", "PL", "SE", "CH", "BE", "AT", "ID", "SA", "AR", "ZA", "TH", "PH", "MY", "SG",
   "NO", "DK", "FI", "IE", "PT", "CZ", "RO", "GR", "HU", "IL", "UA", "NZ", "CO", "CL", "PE",
   "VN", "PK", "BD", "EG", "NG", "KE", "MA", "DZ", "TW", "KZ",
+  // Same pattern as Saint-Barthélemy, many times the population.
+  "GP", "MF",
 ];

@@ -51,7 +51,7 @@ test("canonical output always satisfies Google's pattern and is stable (fuzzed w
       const s = i % 2 ? sample(ast, rnd) : mutate(sample(ast, rnd), rnd);
       const out = format(cc, s);
       if (out === null) continue;
-      assert.match(out, google, `${cc}: "${s}" -> "${out}"`);
+      if (!OVERRIDES[cc]?.widens) assert.match(out, google, `${cc}: "${s}" -> "${out}"`); // see scripts/overrides.ts
       assert.equal(format(cc, out), out, `${cc}: format is not idempotent for "${out}"`);
       assert.equal(format(cc, out.toLowerCase().replace(/[ -]/g, "")), out, `${cc}: compact "${out}" formats differently`);
     }

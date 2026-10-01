@@ -66,6 +66,7 @@
     "build": "node scripts/build.ts",
     "typecheck": "tsc --noEmit",
     "test": "node --test \"test/*.test.ts\"",
+    "corpus": "node scripts/fetch-corpus.ts",
     "size": "node scripts/size.ts --compare",
     "compare": "node scripts/compare.ts",
     "bench": "node scripts/bench.ts",
