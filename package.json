@@ -100,7 +100,8 @@
     "bench": "node scripts/bench.ts",
     "check": "npm run data && npm run build && npm run typecheck && npm test && npm run size && npm run lint:pkg",
     "prepublishOnly": "npm run check",
-    "lint:pkg": "publint && attw --pack ."
+    "lint:pkg": "publint && attw --pack .",
+    "test:browser": "npm run build && npm ci --prefix test/browser --no-audit --no-fund && node test/browser/run.ts"
   },
   "keywords": [
     "postal-code",

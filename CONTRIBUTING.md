@@ -11,7 +11,7 @@ npm install
 npm run check   # regenerate data, typecheck, build, test, size budgets, package lint
 ```
 
-`npm run check` must pass before a pull request is merged. CI also installs the packed package on Node 14 through 24.
+`npm run check` must pass before a pull request is merged. CI also installs the packed package on Node 14 through 24, and runs it in Chromium, Firefox and WebKit through native ES modules, Vite and webpack (`npm run test:browser`, after `npx --prefix test/browser playwright install`).
 
 ## How the code is laid out
 

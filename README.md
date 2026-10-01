@@ -349,7 +349,7 @@ postalkit follows semver. Data changes are listed in [CHANGELOG.md](./CHANGELOG.
 
 ## Development
 
-Needs Node 22.18 or later (`nvm use` picks up `.nvmrc`): scripts and tests are TypeScript, run directly by Node. The published package works on Node 14 and later, which CI checks by installing the packed tarball on Node 14 through 24.
+Needs Node 22.18 or later (`nvm use` picks up `.nvmrc`): scripts and tests are TypeScript, run directly by Node. The published package works on Node 14 and later, which CI checks by installing the packed tarball on Node 14 through 24. CI also runs it in Chromium, Firefox and WebKit, loaded as native ES modules and bundled by Vite and webpack, and checks that every combination behaves exactly like Node.
 
 ```bash
 npm run check     # regenerate data, typecheck, build, test, size budgets, publint + attw
@@ -358,6 +358,7 @@ npm run bench     # throughput, after a build
 npm run fetch     # refresh data/upstream.json from Google, then `npm run data`
 npm run corpus    # refresh data/corpus.json from GeoNames (needs `unzip`)
 npm run docs      # API reference into docs/ (TypeDoc, run with its own TypeScript 6)
+npm run test:browser   # browsers and bundlers; first: npx --prefix test/browser playwright install
 ```
 
 To see the playground locally, build, serve the repository root (`python3 -m http.server`), and open `/playground/`.

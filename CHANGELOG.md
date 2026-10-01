@@ -24,6 +24,7 @@ All notable changes to postalkit. The format follows [Keep a Changelog](https://
 - CI runs the full check, package linting (publint, are-the-types-wrong), and installs the packed tarball on Node 14, 16, 18, 20, 22 and 24. A weekly job reports changes in Google's data.
 - Releases are published from CI with npm provenance.
 - A playground page shows every feature, as you type.
+- Browser and bundler test: the packed package in Chromium, Firefox and WebKit, as native ES modules and bundled by Vite and webpack (ESM and CommonJS), compared result by result with Node; plus a check that bundlers tree-shake unused API.
 - Contributing guide, security policy, issue forms and Dependabot for dependencies and actions.
 
 ### Development

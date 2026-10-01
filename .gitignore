@@ -4,3 +4,5 @@ dist/
 docs/
 *.tgz
 .DS_Store
+test/browser/node_modules/
+test/browser/out/
